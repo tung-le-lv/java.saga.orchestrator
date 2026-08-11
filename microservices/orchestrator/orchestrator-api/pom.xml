@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.openmind</groupId>
+        <artifactId>openmind-saga-orchestrator</artifactId>
+        <version>1.0.0-SNAPSHOT</version>
+        <relativePath>../../../pom.xml</relativePath>
+    </parent>
+
+    <artifactId>orchestrator-api</artifactId>
+    <packaging>jar</packaging>
+    <name>Orchestrator :: Api</name>
+    <description>Order placement saga orchestrator: Axon-managed saga bridged to SNS/SQS, custom MongoDB saga store</description>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.openmind</groupId>
+            <artifactId>order-contract</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.openmind</groupId>
+            <artifactId>payment-contract</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.openmind</groupId>
+            <artifactId>fulfillment-contract</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.openmind</groupId>
+            <artifactId>email-contract</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.openmind</groupId>
+            <artifactId>shared-messaging</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.openmind</groupId>
+            <artifactId>shared-mongodb</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.axonframework</groupId>
+            <artifactId>axon-spring-boot-starter</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.awspring.cloud</groupId>
+            <artifactId>spring-cloud-aws-starter-sns</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.awspring.cloud</groupId>
+            <artifactId>spring-cloud-aws-starter-sqs</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.mongodb</groupId>
+            <artifactId>mongodb-driver-sync</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <finalName>orchestrator-api</finalName>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <version>${spring-boot.version}</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>repackage</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>

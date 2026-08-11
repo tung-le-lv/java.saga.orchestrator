@@ -1,0 +1,35 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: orchestrator-api
+  cloud:
+    aws:
+      region:
+        static: us-east-1
+      credentials:
+        access-key: test
+        secret-key: test
+      sns:
+        endpoint: http://localhost:4566
+      sqs:
+        endpoint: http://localhost:4566
+
+mongodb:
+  connection-string: mongodb://localhost:27017
+  database-name: OrderPlacementOrchestratorDb
+
+axon:
+  axonserver:
+    enabled: false
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+
+logging:
+  level:
+    root: INFO
+    org.springframework.web: WARN
+    com.openmind: INFO

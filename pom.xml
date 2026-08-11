@@ -1,0 +1,224 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.openmind</groupId>
+    <artifactId>openmind-saga-orchestrator</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+    <packaging>pom</packaging>
+
+    <name>OpenMind Saga Orchestrator</name>
+    <description>DDD/CQRS microservices order-placement saga, orchestrator pattern over AWS SQS/SNS</description>
+
+    <properties>
+        <maven.compiler.release>21</maven.compiler.release>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+
+        <spring-boot.version>3.4.2</spring-boot.version>
+        <spring-cloud-aws.version>3.3.0</spring-cloud-aws.version>
+        <mongodb-driver.version>5.2.1</mongodb-driver.version>
+        <springdoc.version>2.8.4</springdoc.version>
+        <axon.version>4.10.3</axon.version>
+    </properties>
+
+    <modules>
+        <module>shared-kernel/shared-domain</module>
+        <module>shared-kernel/shared-integration-messages</module>
+        <module>shared-kernel/shared-application</module>
+        <module>shared-kernel/shared-mongodb</module>
+        <module>shared-kernel/shared-messaging</module>
+
+        <module>microservices/order/order-contract</module>
+        <module>microservices/order/order-domain</module>
+        <module>microservices/order/order-application</module>
+        <module>microservices/order/order-infrastructure</module>
+        <module>microservices/order/order-api</module>
+
+        <module>microservices/payment/payment-contract</module>
+        <module>microservices/payment/payment-domain</module>
+        <module>microservices/payment/payment-application</module>
+        <module>microservices/payment/payment-infrastructure</module>
+        <module>microservices/payment/payment-api</module>
+
+        <module>microservices/fulfillment/fulfillment-contract</module>
+        <module>microservices/fulfillment/fulfillment-domain</module>
+        <module>microservices/fulfillment/fulfillment-application</module>
+        <module>microservices/fulfillment/fulfillment-infrastructure</module>
+        <module>microservices/fulfillment/fulfillment-api</module>
+
+        <module>microservices/email/email-contract</module>
+        <module>microservices/email/email-api</module>
+
+        <module>microservices/orchestrator/orchestrator-api</module>
+    </modules>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-dependencies</artifactId>
+                <version>${spring-boot.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>io.awspring.cloud</groupId>
+                <artifactId>spring-cloud-aws-dependencies</artifactId>
+                <version>${spring-cloud-aws.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>org.mongodb</groupId>
+                <artifactId>mongodb-driver-sync</artifactId>
+                <version>${mongodb-driver.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.mongodb</groupId>
+                <artifactId>bson</artifactId>
+                <version>${mongodb-driver.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.springdoc</groupId>
+                <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+                <version>${springdoc.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.axonframework</groupId>
+                <artifactId>axon-spring-boot-starter</artifactId>
+                <version>${axon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.axonframework</groupId>
+                <artifactId>axon-modelling</artifactId>
+                <version>${axon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.axonframework</groupId>
+                <artifactId>axon-messaging</artifactId>
+                <version>${axon.version}</version>
+            </dependency>
+
+            <!-- Shared kernel modules -->
+            <dependency>
+                <groupId>com.openmind</groupId>
+                <artifactId>shared-domain</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.openmind</groupId>
+                <artifactId>shared-integration-messages</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.openmind</groupId>
+                <artifactId>shared-application</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.openmind</groupId>
+                <artifactId>shared-mongodb</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.openmind</groupId>
+                <artifactId>shared-messaging</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <!-- Order service modules -->
+            <dependency>
+                <groupId>com.openmind</groupId>
+                <artifactId>order-contract</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.openmind</groupId>
+                <artifactId>order-domain</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.openmind</groupId>
+                <artifactId>order-application</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.openmind</groupId>
+                <artifactId>order-infrastructure</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <!-- Payment service modules -->
+            <dependency>
+                <groupId>com.openmind</groupId>
+                <artifactId>payment-contract</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.openmind</groupId>
+                <artifactId>payment-domain</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.openmind</groupId>
+                <artifactId>payment-application</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.openmind</groupId>
+                <artifactId>payment-infrastructure</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <!-- Fulfillment service modules -->
+            <dependency>
+                <groupId>com.openmind</groupId>
+                <artifactId>fulfillment-contract</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.openmind</groupId>
+                <artifactId>fulfillment-domain</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.openmind</groupId>
+                <artifactId>fulfillment-application</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.openmind</groupId>
+                <artifactId>fulfillment-infrastructure</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <!-- Email service modules -->
+            <dependency>
+                <groupId>com.openmind</groupId>
+                <artifactId>email-contract</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <configuration>
+                        <release>${maven.compiler.release}</release>
+                        <parameters>true</parameters>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+    </build>
+</project>

@@ -1,0 +1,147 @@
+services:
+  # MongoDB Database
+  mongodb:
+    image: mongo:7.0
+    container_name: openmind-mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - openmind-network
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # LocalStack for AWS SQS/SNS (Local Development)
+  localstack:
+    image: localstack/localstack:3.8
+    container_name: openmind-localstack
+    ports:
+      - "4566:4566"
+    environment:
+      - SERVICES=sqs,sns
+      - DEBUG=1
+      - DOCKER_HOST=unix:///var/run/docker.sock
+    volumes:
+      - localstack_data:/var/lib/localstack
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./docker/localstack-init:/etc/localstack/init/ready.d
+    networks:
+      - openmind-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4566/_localstack/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Order Service
+  order:
+    build:
+      context: .
+      dockerfile: microservices/order/order-api/Dockerfile
+    container_name: openmind-order
+    ports:
+      - "5001:8080"
+    environment:
+      - MONGODB_CONNECTIONSTRING=mongodb://mongodb:27017
+      - MONGODB_DATABASENAME=OrderDb
+      - SPRING_CLOUD_AWS_SNS_ENDPOINT=http://localstack:4566
+      - SPRING_CLOUD_AWS_SQS_ENDPOINT=http://localstack:4566
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      localstack:
+        condition: service_healthy
+    networks:
+      - openmind-network
+
+  # Payment Service
+  payment:
+    build:
+      context: .
+      dockerfile: microservices/payment/payment-api/Dockerfile
+    container_name: openmind-payment
+    ports:
+      - "5002:8080"
+    environment:
+      - MONGODB_CONNECTIONSTRING=mongodb://mongodb:27017
+      - MONGODB_DATABASENAME=PaymentDb
+      - SPRING_CLOUD_AWS_SNS_ENDPOINT=http://localstack:4566
+      - SPRING_CLOUD_AWS_SQS_ENDPOINT=http://localstack:4566
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      localstack:
+        condition: service_healthy
+    networks:
+      - openmind-network
+
+  # Fulfillment Service
+  fulfillment:
+    build:
+      context: .
+      dockerfile: microservices/fulfillment/fulfillment-api/Dockerfile
+    container_name: openmind-fulfillment
+    ports:
+      - "5003:8080"
+    environment:
+      - MONGODB_CONNECTIONSTRING=mongodb://mongodb:27017
+      - MONGODB_DATABASENAME=FulfillmentDb
+      - SPRING_CLOUD_AWS_SNS_ENDPOINT=http://localstack:4566
+      - SPRING_CLOUD_AWS_SQS_ENDPOINT=http://localstack:4566
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      localstack:
+        condition: service_healthy
+    networks:
+      - openmind-network
+
+  # Email Service
+  email:
+    build:
+      context: .
+      dockerfile: microservices/email/email-api/Dockerfile
+    container_name: openmind-email
+    ports:
+      - "5004:8080"
+    environment:
+      - SPRING_CLOUD_AWS_SNS_ENDPOINT=http://localstack:4566
+      - SPRING_CLOUD_AWS_SQS_ENDPOINT=http://localstack:4566
+    depends_on:
+      localstack:
+        condition: service_healthy
+    networks:
+      - openmind-network
+
+  # Order Placement Orchestrator (Central Saga Coordinator)
+  orchestrator:
+    build:
+      context: .
+      dockerfile: microservices/orchestrator/orchestrator-api/Dockerfile
+    container_name: openmind-orchestrator
+    ports:
+      - "5000:8080"
+    environment:
+      - MONGODB_CONNECTIONSTRING=mongodb://mongodb:27017
+      - MONGODB_DATABASENAME=OrderPlacementOrchestratorDb
+      - SPRING_CLOUD_AWS_SNS_ENDPOINT=http://localstack:4566
+      - SPRING_CLOUD_AWS_SQS_ENDPOINT=http://localstack:4566
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      localstack:
+        condition: service_healthy
+    networks:
+      - openmind-network
+
+volumes:
+  mongodb_data:
+  localstack_data:
+
+networks:
+  openmind-network:
+    driver: bridge

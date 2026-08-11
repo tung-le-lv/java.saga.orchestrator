@@ -1,0 +1,61 @@
+package com.openmind.payment.application.commands.processpayment;
+
+import com.openmind.payment.domain.aggregates.Payment;
+import com.openmind.payment.domain.repositories.PaymentRepository;
+import com.openmind.payment.domain.valueobjects.Money;
+import com.openmind.shared.application.commands.CommandHandler;
+import com.openmind.shared.application.commands.CommandResult;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Component;
+
+import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
+
+/**
+ * Simulates calling out to a payment gateway. There's no real payment processor here: the
+ * outcome is randomized (~85% approval) purely to exercise both the happy path and the
+ * saga's PaymentNotPaid retry path.
+ */
+@Component
+public class ProcessPaymentCommandHandler implements CommandHandler<ProcessPaymentCommand, UUID> {
+
+    private static final Logger log = LoggerFactory.getLogger(ProcessPaymentCommandHandler.class);
+
+    private final PaymentRepository paymentRepository;
+
+    public ProcessPaymentCommandHandler(PaymentRepository paymentRepository) {
+        this.paymentRepository = paymentRepository;
+    }
+
+    @Override
+    public CommandResult<UUID> handle(ProcessPaymentCommand command) {
+        try {
+            Payment payment = Payment.create(
+                    UUID.randomUUID(), command.orderId(), command.customerId(),
+                    Money.create(command.amount()), command.paymentMethod());
+            paymentRepository.add(payment);
+
+            if (simulateGatewayApproval()) {
+                String transactionId = "TXN-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+                payment.complete(transactionId, command.correlationId());
+                log.info("[ProcessPayment] Approved - OrderId: {}, PaymentId: {}, TransactionId: {}",
+                        command.orderId(), payment.getId(), transactionId);
+            } else {
+                payment.fail("Card declined by issuing bank", "CARD_DECLINED", command.correlationId());
+                log.warn("[ProcessPayment] Declined - OrderId: {}, PaymentId: {}", command.orderId(), payment.getId());
+            }
+
+            paymentRepository.update(payment);
+
+            return CommandResult.success(payment.getId());
+        } catch (Exception e) {
+            log.error("[ProcessPayment] ERROR: {}", e.getMessage(), e);
+            return CommandResult.failure(e.getMessage(), "PROCESS_PAYMENT_FAILED");
+        }
+    }
+
+    private boolean simulateGatewayApproval() {
+        return ThreadLocalRandom.current().nextInt(100) < 85;
+    }
+}

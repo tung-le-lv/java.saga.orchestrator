@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.openmind</groupId>
+        <artifactId>openmind-saga-orchestrator</artifactId>
+        <version>1.0.0-SNAPSHOT</version>
+        <relativePath>../../pom.xml</relativePath>
+    </parent>
+
+    <artifactId>shared-domain</artifactId>
+    <packaging>jar</packaging>
+    <name>Shared :: Domain</name>
+    <description>DDD tactical pattern base types (Entity, AggregateRoot, ValueObject, Enumeration, DomainEvent, business rules)</description>
+
+    <dependencies>
+        <!-- Only for @BsonIgnore on transient/in-memory-only properties (e.g. domain events)
+             that must never round-trip through MongoDB. No other Mongo-specific coupling here. -->
+        <dependency>
+            <groupId>org.mongodb</groupId>
+            <artifactId>bson</artifactId>
+        </dependency>
+    </dependencies>
+</project>

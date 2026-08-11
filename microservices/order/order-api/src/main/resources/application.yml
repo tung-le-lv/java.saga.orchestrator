@@ -1,0 +1,31 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: order-api
+  cloud:
+    aws:
+      region:
+        static: us-east-1
+      credentials:
+        access-key: test
+        secret-key: test
+      sns:
+        endpoint: http://localhost:4566
+      sqs:
+        endpoint: http://localhost:4566
+
+mongodb:
+  connection-string: mongodb://localhost:27017
+  database-name: OrderDb
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+
+logging:
+  level:
+    root: INFO
+    org.springframework.web: WARN
+    com.openmind: INFO

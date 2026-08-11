@@ -1,0 +1,23 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: email-api
+  cloud:
+    aws:
+      region:
+        static: us-east-1
+      credentials:
+        access-key: test
+        secret-key: test
+      sns:
+        endpoint: http://localhost:4566
+      sqs:
+        endpoint: http://localhost:4566
+
+logging:
+  level:
+    root: INFO
+    org.springframework.web: WARN
+    com.openmind: INFO
