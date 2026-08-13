@@ -1,9 +1,12 @@
 server:
   port: 8080
+  shutdown: graceful
 
 spring:
   application:
     name: order-api
+  lifecycle:
+    timeout-per-shutdown-phase: 10s
   cloud:
     aws:
       region:

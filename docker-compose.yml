@@ -128,7 +128,7 @@ services:
   orchestrator:
     build:
       context: .
-      dockerfile: microservices/orchestrator/orchestrator-api/Dockerfile
+      dockerfile: microservices/order-placement-saga/orchestrator-api/Dockerfile
     container_name: openmind-orchestrator
     ports:
       - "5000:8080"

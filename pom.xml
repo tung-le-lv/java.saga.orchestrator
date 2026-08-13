@@ -49,7 +49,7 @@
         <module>microservices/email/email-contract</module>
         <module>microservices/email/email-api</module>
 
-        <module>microservices/orchestrator/orchestrator-api</module>
+        <module>microservices/order-placement-saga/orchestrator-api</module>
     </modules>
 
     <dependencyManagement>

@@ -5,10 +5,10 @@ COPY pom.xml .
 COPY shared-kernel shared-kernel
 COPY microservices microservices
 
-RUN mvn -q -pl microservices/orchestrator/orchestrator-api -am package -DskipTests
+RUN mvn -q -pl microservices/order-placement-saga/orchestrator-api -am package -DskipTests
 
 FROM eclipse-temurin:21-jre
 WORKDIR /app
 EXPOSE 8080
-COPY --from=build /workspace/microservices/orchestrator/orchestrator-api/target/orchestrator-api.jar app.jar
+COPY --from=build /workspace/microservices/order-placement-saga/orchestrator-api/target/orchestrator-api.jar app.jar
 ENTRYPOINT ["java", "-jar", "app.jar"]

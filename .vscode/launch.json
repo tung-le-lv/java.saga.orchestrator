@@ -43,7 +43,7 @@
         },
         {
             "type": "java",
-            "name": "Orchestrator Api (dev)",
+            "name": "Order Placement Saga (dev)",
             "request": "launch",
             "mainClass": "com.openmind.orchestrator.api.OrchestratorApiApplication",
             "projectName": "orchestrator-api",
@@ -60,7 +60,7 @@
                 "Payment Api (dev)",
                 "Fulfillment Api (dev)",
                 "Email Api (dev)",
-                "Orchestrator Api (dev)"
+                "Order Placement Saga (dev)"
             ],
             "stopAll": true
         }

@@ -1,9 +1,12 @@
 server:
   port: 8080
+  shutdown: graceful
 
 spring:
   application:
     name: orchestrator-api
+  lifecycle:
+    timeout-per-shutdown-phase: 10s
   # This service never event-sources anything - EventGateway.publish(...) is only used to
   # bridge SNS/SQS-delivered integration events onto Axon's in-memory event bus for the saga's
   # subscribing @SagaEventHandlers. Axon still auto-configures a persistent event store (JPA,
