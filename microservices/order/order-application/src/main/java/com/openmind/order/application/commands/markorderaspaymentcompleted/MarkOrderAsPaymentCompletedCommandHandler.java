@@ -7,8 +7,13 @@ import com.openmind.shared.domain.EntityNotFoundException;
 import org.axonframework.commandhandling.CommandHandler;
 import org.springframework.stereotype.Component;
 
+import java.util.Set;
+
 @Component
 public class MarkOrderAsPaymentCompletedCommandHandler {
+
+    private static final Set<OrderStatus> RESUMABLE_BEFORE_PAYMENT_PROCESSING =
+            Set.of(OrderStatus.PENDING, OrderStatus.PAYMENT_FAILED);
 
     private final OrderRepository orderRepository;
 
@@ -25,11 +30,12 @@ public class MarkOrderAsPaymentCompletedCommandHandler {
         orderRepository.update(order);
     }
 
-    // The saga drives payment directly from Pending -> PaymentCompleted/Failed; there's no
-    // separate trigger for the intermediate PaymentProcessing state in this flow, so we
-    // transition through it here to keep the aggregate's state machine intact.
+    // The saga drives payment directly from Pending/PaymentFailed -> PaymentCompleted (the
+    // latter on a payment retry after PaymentNotPaid); there's no separate trigger for the
+    // intermediate PaymentProcessing state in either flow, so we transition through it here to
+    // keep the aggregate's state machine intact.
     private void ensurePaymentProcessing(Order order) {
-        if (order.getStatus().equals(OrderStatus.PENDING)) {
+        if (RESUMABLE_BEFORE_PAYMENT_PROCESSING.contains(order.getStatus())) {
             order.setPaymentProcessing();
         }
     }

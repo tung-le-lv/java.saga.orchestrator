@@ -1,15 +1,16 @@
 package com.openmind.payment.application.commands.processpayment;
 
-import com.openmind.payment.domain.aggregates.Payment;
-import com.openmind.payment.domain.repositories.PaymentRepository;
-import com.openmind.payment.domain.valueobjects.Money;
+import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
+
 import org.axonframework.commandhandling.CommandHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
-import java.util.UUID;
-import java.util.concurrent.ThreadLocalRandom;
+import com.openmind.payment.domain.aggregates.Payment;
+import com.openmind.payment.domain.repositories.PaymentRepository;
+import com.openmind.payment.domain.valueobjects.Money;
 
 /**
  * Simulates calling out to a payment gateway. There's no real payment processor here: the
@@ -34,15 +35,8 @@ public class ProcessPaymentCommandHandler {
                 Money.create(command.amount()), command.paymentMethod());
         paymentRepository.add(payment);
 
-        if (simulateGatewayApproval()) {
-            String transactionId = "TXN-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
-            payment.complete(transactionId, command.correlationId());
-            log.info("[ProcessPayment] Approved - OrderId: {}, PaymentId: {}, TransactionId: {}",
-                    command.orderId(), payment.getId(), transactionId);
-        } else {
-            payment.fail("Card declined by issuing bank", "CARD_DECLINED", command.correlationId());
+        payment.fail("Card declined by issuing bank", "CARD_DECLINED", command.correlationId());
             log.warn("[ProcessPayment] Declined - OrderId: {}, PaymentId: {}", command.orderId(), payment.getId());
-        }
 
         paymentRepository.update(payment);
 

@@ -74,6 +74,8 @@ public class Payment extends AggregateRoot {
 
         status = PaymentStatus.COMPLETED;
         this.transactionId = transactionId;
+        this.failureReason = null;
+        this.failureCode = null;
         setUpdatedAt();
 
         emit(new PaymentCompletedDomainEvent(getId(), orderId, transactionId, correlationId));

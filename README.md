@@ -126,6 +126,60 @@ sequenceDiagram
     Note over Saga: Completed (saga ends, removed from saga store)
 ```
 
+## Retrieve Saga State
+
+While a saga is active, its live state can be inspected directly:
+
+```bash
+GET /api/sagas/orders/{orderId}
+```
+
+The response is `OrderPlacementSaga`'s raw field state as persisted in Axon's `JpaSagaStore`. Example below is
+an order parked in `PaymentNotPaid` after [Scenario 2](#scenario-2-retry-with-payment-failed)'s first payment
+attempt was declined - `lastError`/`lastErrorCode` are set, `paymentId`/`trackingNumber` are still `null`, and
+it's awaiting `POST /api/payments/order/{orderId}/retry` to continue:
+
+```json
+{
+    "orderId": "a87b637f-49a9-421b-919b-4e2348b3279b",
+    "correlationId": "a87b637f-49a9-421b-919b-4e2348b3279b",
+    "customerId": "00315240-f601-44fb-b2ac-bd925edefb69",
+    "totalAmount": 1449.98,
+    "shippingAddress": "456 Innovation Ave, Seattle, WA 98101, USA",
+    "customerEmail": "customer-00315240-f601-44fb-b2ac-bd925edefb69@example.com",
+    "customerName": "Customer 00315240",
+    "items": [
+        {
+            "productId": "1423ac2d-910c-42c1-9c68-cc90ab650bd1",
+            "productName": "iPhone 15 Pro",
+            "quantity": 1,
+            "unitPrice": 1199.99
+        },
+        {
+            "productId": "585ebe41-18ee-4969-af9b-86ae559de59b",
+            "productName": "AirPods Pro",
+            "quantity": 1,
+            "unitPrice": 249.99
+        }
+    ],
+    "paymentId": null,
+    "paymentTransactionId": null,
+    "fulfillmentId": null,
+    "trackingNumber": null,
+    "estimatedDelivery": null,
+    "lastError": "Card declined by issuing bank",
+    "lastErrorCode": "CARD_DECLINED",
+    "retryCount": 0,
+    "currentState": "PaymentNotPaid",
+    "createdAt": "2026-08-13T09:40:02.731992500Z",
+    "updatedAt": "2026-08-13T09:40:04.357265700Z",
+    "completedAt": null
+}
+```
+
+Once the saga reaches a terminal state (`Completed` or `Cancelled`), Axon removes it from the saga store and
+this endpoint returns `404` - see [Architecture Overview](#architecture-overview).
+
 ## Features
 
 ### Saga Orchestrator Pattern

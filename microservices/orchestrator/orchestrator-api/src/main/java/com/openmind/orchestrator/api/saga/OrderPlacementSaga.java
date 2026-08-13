@@ -1,5 +1,21 @@
 package com.openmind.orchestrator.api.saga;
 
+import java.math.BigDecimal;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+
+import org.axonframework.modelling.saga.SagaEventHandler;
+import org.axonframework.modelling.saga.SagaLifecycle;
+import org.axonframework.modelling.saga.StartSaga;
+import org.axonframework.spring.stereotype.Saga;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.openmind.email.contract.commands.SendBackorderEmailCommand;
 import com.openmind.email.contract.commands.SendOrderConfirmationEmailCommand;
 import com.openmind.email.contract.commands.SendPaymentFailedEmailCommand;
@@ -24,23 +40,8 @@ import com.openmind.payment.contract.commands.RefundPaymentCommand;
 import com.openmind.payment.contract.events.PaymentCompletedEvent;
 import com.openmind.payment.contract.events.PaymentFailedEvent;
 import com.openmind.payment.contract.events.PaymentRefundedEvent;
-import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.openmind.shared.messaging.MessagePublisher;
 import com.openmind.shared.messaging.Topics;
-import org.axonframework.modelling.saga.SagaEventHandler;
-import org.axonframework.modelling.saga.SagaLifecycle;
-import org.axonframework.modelling.saga.StartSaga;
-import org.axonframework.spring.stereotype.Saga;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-
-import java.math.BigDecimal;
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
 
 /**
  * Order Placement Saga: coordinates the order placement workflow across the Order, Payment,
@@ -76,6 +77,7 @@ public class OrderPlacementSaga {
     @Autowired
     private transient MessagePublisher messagePublisher;
 
+    // These properties are persisted in the table saga_entry, column serialized_saga, by Axon's JpaSagaStore
     private UUID orderId;
     private UUID correlationId;
     private UUID customerId;

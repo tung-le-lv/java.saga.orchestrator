@@ -90,7 +90,8 @@ public class Order extends AggregateRoot {
     }
 
     public void setPaymentProcessing() {
-        checkRule(new OrderMustBeInStatusRule(status, OrderStatus.PENDING, "transition to PaymentProcessing"));
+        List<OrderStatus> allowedStatuses = List.of(OrderStatus.PENDING, OrderStatus.PAYMENT_FAILED);
+        checkRule(new OrderMustBeInOneOfStatusesRule(status, allowedStatuses, "transition to PaymentProcessing"));
 
         status = OrderStatus.PAYMENT_PROCESSING;
         setUpdatedAt();
@@ -101,6 +102,7 @@ public class Order extends AggregateRoot {
 
         status = OrderStatus.PAYMENT_COMPLETED;
         paymentTransactionId = transactionId;
+        cancellationReason = null;
         setUpdatedAt();
 
         emit(new OrderPaymentCompletedDomainEvent(getId(), transactionId, correlationId));
