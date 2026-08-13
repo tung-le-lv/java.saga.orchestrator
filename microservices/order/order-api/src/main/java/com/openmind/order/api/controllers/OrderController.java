@@ -5,6 +5,9 @@ import com.openmind.order.application.commands.createorder.CreateOrderCommand;
 import com.openmind.order.application.commands.createorder.OrderItemCommand;
 import com.openmind.order.application.queries.getorder.GetOrderQuery;
 import com.openmind.order.application.queries.getorder.OrderDto;
+import com.openmind.order.contract.commands.PlaceOrderCommand;
+import com.openmind.shared.messaging.MessagePublisher;
+import com.openmind.shared.messaging.Topics;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.messaging.responsetypes.ResponseTypes;
 import org.axonframework.queryhandling.QueryGateway;
@@ -26,10 +29,12 @@ public class OrderController {
 
     private final CommandGateway commandGateway;
     private final QueryGateway queryGateway;
+    private final MessagePublisher messagePublisher;
 
-    public OrderController(CommandGateway commandGateway, QueryGateway queryGateway) {
+    public OrderController(CommandGateway commandGateway, QueryGateway queryGateway, MessagePublisher messagePublisher) {
         this.commandGateway = commandGateway;
         this.queryGateway = queryGateway;
+        this.messagePublisher = messagePublisher;
     }
 
     @GetMapping("/{id}")
@@ -60,5 +65,17 @@ public class OrderController {
 
         return ResponseEntity.created(URI.create("/api/orders/" + orderId))
                 .body(Map.of("orderId", orderId));
+    }
+
+    @PostMapping("/{id}/place")
+    public ResponseEntity<?> placeOrder(@PathVariable("id") UUID id) {
+        OrderDto order = queryGateway.query(new GetOrderQuery(id), ResponseTypes.instanceOf(OrderDto.class)).join();
+        if (order == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        messagePublisher.publish(Topics.ORDER_COMMANDS, new PlaceOrderCommand(id, id));
+
+        return ResponseEntity.accepted().body(Map.of("orderId", id));
     }
 }

@@ -2,33 +2,33 @@
 	"info": {
 		"_postman_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
 		"name": "OpenMind Saga Orchestrator",
-		"description": "Postman collection for testing the OpenMind Saga Orchestrator microservices (Java/Spring Boot port).\n\n## Services\n- **Orchestrator** (Port 5000): Axon-managed saga that coordinates the order placement workflow\n- **Order** (Port 5001): Manages order creation and storage\n- **Payment** (Port 5002): Handles payment processing (simulated gateway) + manual retry\n- **Fulfillment** (Port 5003): Manages order fulfillment and shipping (simulated warehouse)\n- **Email** (Port 5004): Sends notification emails (simulated, stateless)\n\n## Workflow\n1. First create an order using \"Create Order\" in the Order Service\n2. Then use \"Place Order (Start Saga)\" to initiate the placement process\n3. Poll \"Get Saga State\" to watch the saga move through states (it's removed from the store once it ends, so a 404 there means it already completed/cancelled)\n4. Check \"Get Order\" / \"Get Payment\" / \"Get Fulfillment\" for each service's own view\n5. If the saga parks in `PaymentNotPaid`, use Payment Service's \"Retry Payment\" to unblock it",
+		"description": "Postman collection for testing the OpenMind Saga Orchestrator microservices (Java/Spring Boot port).\n\nDefault variable values below match running each service locally without Docker (application-dev.yml / the `dev` profile). If you're using `docker compose up` instead, change the `*_url` variables to ports 5000 (orchestrator), 5001 (order), 5002 (payment), 5003 (fulfillment), 5004 (email).\n\n## Services\n- **Orchestrator** (Port 8095): Axon-managed saga that coordinates the order placement workflow\n- **Order** (Port 8091): Manages order creation and storage, and triggers the placement saga\n- **Payment** (Port 8092): Handles payment processing (simulated gateway) + manual retry\n- **Fulfillment** (Port 8093): Manages order fulfillment and shipping (simulated warehouse)\n- **Email** (Port 8094): Sends notification emails (simulated, stateless)\n\n## Workflow\n1. First create an order using \"Create Order\" in the Order Service\n2. Then use Order Service's \"Place Order (Start Saga)\" to initiate the placement process\n3. Poll Orchestrator's \"Get Saga State\" to watch the saga move through states (it's removed from the store once it ends, so a 404 there means it already completed/cancelled)\n4. Check \"Get Order\" / \"Get Payment\" / \"Get Fulfillment\" for each service's own view\n5. If the saga parks in `PaymentNotPaid`, use Payment Service's \"Retry Payment\" to unblock it",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"variable": [
 		{
 			"key": "orchestrator_url",
-			"value": "http://localhost:5000",
+			"value": "http://localhost:8095",
 			"type": "string"
 		},
 		{
 			"key": "order_url",
-			"value": "http://localhost:5001",
+			"value": "http://localhost:8091",
 			"type": "string"
 		},
 		{
 			"key": "payment_url",
-			"value": "http://localhost:5002",
+			"value": "http://localhost:8092",
 			"type": "string"
 		},
 		{
 			"key": "fulfillment_url",
-			"value": "http://localhost:5003",
+			"value": "http://localhost:8093",
 			"type": "string"
 		},
 		{
 			"key": "email_url",
-			"value": "http://localhost:5004",
+			"value": "http://localhost:8094",
 			"type": "string"
 		},
 		{
@@ -45,81 +45,8 @@
 	"item": [
 		{
 			"name": "Orchestrator",
-			"description": "Order Placement Orchestrator API - manages the Axon saga workflow",
+			"description": "Order Placement Orchestrator API - manages the Axon saga workflow. Not exposed to clients directly; the saga is triggered indirectly via the Order service's \"Place Order\" endpoint.",
 			"item": [
-				{
-					"name": "Place Order (Start Saga)",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"pm.test(\"Order placement accepted\", function () {",
-									"    pm.response.to.have.status(202);",
-									"});",
-									"",
-									"if (pm.response.code === 202) {",
-									"    var jsonData = pm.response.json();",
-									"    pm.test(\"Response echoes orderId\", function () {",
-									"        pm.expect(jsonData.orderId).to.not.be.null;",
-									"    });",
-									"}"
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"method": "POST",
-						"header": [],
-						"url": {
-							"raw": "{{orchestrator_url}}/api/sagas/orders/{{order_id}}/place",
-							"host": [
-								"{{orchestrator_url}}"
-							],
-							"path": [
-								"api",
-								"sagas",
-								"orders",
-								"{{order_id}}",
-								"place"
-							]
-						},
-						"description": "Publishes a PlaceOrderCommand to the order-commands SNS topic, the same path any other saga input takes. This starts (or, if the saga is in ValidationFailed, retries) the OrderPlacementSaga for the given order, which then coordinates with Payment, Fulfillment, and Email services."
-					},
-					"response": [
-						{
-							"name": "Order Accepted",
-							"originalRequest": {
-								"method": "POST",
-								"header": [],
-								"url": {
-									"raw": "{{orchestrator_url}}/api/sagas/orders/3fa85f64-5717-4562-b3fc-2c963f66afa6/place",
-									"host": [
-										"{{orchestrator_url}}"
-									],
-									"path": [
-										"api",
-										"sagas",
-										"orders",
-										"3fa85f64-5717-4562-b3fc-2c963f66afa6",
-										"place"
-									]
-								}
-							},
-							"status": "Accepted",
-							"code": 202,
-							"_postman_previewlanguage": "json",
-							"header": [
-								{
-									"key": "Content-Type",
-									"value": "application/json"
-								}
-							],
-							"body": "{\n    \"orderId\": \"3fa85f64-5717-4562-b3fc-2c963f66afa6\"\n}"
-						}
-					]
-				},
 				{
 					"name": "Get Saga State",
 					"event": [
@@ -189,43 +116,6 @@
 							"body": "{\n    \"orderId\": \"3fa85f64-5717-4562-b3fc-2c963f66afa6\",\n    \"correlationId\": \"3fa85f64-5717-4562-b3fc-2c963f66afa6\",\n    \"customerId\": \"3fa85f64-5717-4562-b3fc-2c963f66afa6\",\n    \"totalAmount\": 2699.97,\n    \"currentState\": \"Fulfilling\",\n    \"trackingNumber\": null,\n    \"lastError\": null,\n    \"createdAt\": \"2026-01-13T10:00:00Z\",\n    \"updatedAt\": \"2026-01-13T10:00:02Z\",\n    \"completedAt\": null\n}"
 						}
 					]
-				},
-				{
-					"name": "Health Check",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"pm.test(\"Status code is 200\", function () {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
-									"pm.test(\"Service is healthy\", function () {",
-									"    var jsonData = pm.response.json();",
-									"    pm.expect(jsonData.status).to.eql(\"healthy\");",
-									"    pm.expect(jsonData.service).to.eql(\"OrderPlacementOrchestrator\");",
-									"});"
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{orchestrator_url}}/health",
-							"host": [
-								"{{orchestrator_url}}"
-							],
-							"path": [
-								"health"
-							]
-						},
-						"description": "Health check endpoint for the Orchestrator service."
-					},
-					"response": []
 				}
 			]
 		},
@@ -274,9 +164,80 @@
 								"orders"
 							]
 						},
-						"description": "Creates a new order in the Order service. After creating an order, use the Orchestrator's \"Place Order\" endpoint to initiate the saga workflow."
+						"description": "Creates a new order in the Order service. After creating an order, use \"Place Order (Start Saga)\" below to initiate the saga workflow."
 					},
 					"response": []
+				},
+				{
+					"name": "Place Order (Start Saga)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Order placement accepted\", function () {",
+									"    pm.response.to.have.status(202);",
+									"});",
+									"",
+									"if (pm.response.code === 202) {",
+									"    var jsonData = pm.response.json();",
+									"    pm.test(\"Response echoes orderId\", function () {",
+									"        pm.expect(jsonData.orderId).to.not.be.null;",
+									"    });",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{order_url}}/api/orders/{{order_id}}/place",
+							"host": [
+								"{{order_url}}"
+							],
+							"path": [
+								"api",
+								"orders",
+								"{{order_id}}",
+								"place"
+							]
+						},
+						"description": "Publishes a PlaceOrderCommand to the order-commands SNS topic. This starts (or, if the saga is in ValidationFailed, retries) the OrderPlacementSaga for the given order in the Orchestrator, which then coordinates with Payment, Fulfillment, and Email services."
+					},
+					"response": [
+						{
+							"name": "Order Accepted",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"url": {
+									"raw": "{{order_url}}/api/orders/3fa85f64-5717-4562-b3fc-2c963f66afa6/place",
+									"host": [
+										"{{order_url}}"
+									],
+									"path": [
+										"api",
+										"orders",
+										"3fa85f64-5717-4562-b3fc-2c963f66afa6",
+										"place"
+									]
+								}
+							},
+							"status": "Accepted",
+							"code": 202,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n    \"orderId\": \"3fa85f64-5717-4562-b3fc-2c963f66afa6\"\n}"
+						}
+					]
 				},
 				{
 					"name": "Get Order by ID",
@@ -308,43 +269,6 @@
 							]
 						},
 						"description": "Retrieves an order by its ID from the Order service."
-					},
-					"response": []
-				},
-				{
-					"name": "Health Check",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"pm.test(\"Status code is 200\", function () {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
-									"pm.test(\"Service is healthy\", function () {",
-									"    var jsonData = pm.response.json();",
-									"    pm.expect(jsonData.status).to.eql(\"healthy\");",
-									"    pm.expect(jsonData.service).to.eql(\"Order\");",
-									"});"
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{order_url}}/health",
-							"host": [
-								"{{order_url}}"
-							],
-							"path": [
-								"health"
-							]
-						},
-						"description": "Health check endpoint for the Order service."
 					},
 					"response": []
 				}
@@ -426,43 +350,6 @@
 						"description": "Forces the latest (failed) payment attempt for an order to succeed and publishes PaymentCompletedEvent - unblocks a saga instance parked in PaymentNotPaid. Only works if the order's payment is currently Failed."
 					},
 					"response": []
-				},
-				{
-					"name": "Health Check",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"pm.test(\"Status code is 200\", function () {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
-									"pm.test(\"Service is healthy\", function () {",
-									"    var jsonData = pm.response.json();",
-									"    pm.expect(jsonData.status).to.eql(\"healthy\");",
-									"    pm.expect(jsonData.service).to.eql(\"Payment\");",
-									"});"
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{payment_url}}/health",
-							"host": [
-								"{{payment_url}}"
-							],
-							"path": [
-								"health"
-							]
-						},
-						"description": "Health check endpoint for the Payment service. Payments themselves are processed via ProcessPaymentCommand integration messages from the orchestrator, not a direct REST call."
-					},
-					"response": []
 				}
 			]
 		},
@@ -507,125 +394,13 @@
 						"description": "Retrieves the latest fulfillment attempt for an order (status: Pending/Shipped/Failed/Cancelled)."
 					},
 					"response": []
-				},
-				{
-					"name": "Health Check",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"pm.test(\"Status code is 200\", function () {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
-									"pm.test(\"Service is healthy\", function () {",
-									"    var jsonData = pm.response.json();",
-									"    pm.expect(jsonData.status).to.eql(\"healthy\");",
-									"    pm.expect(jsonData.service).to.eql(\"Fulfillment\");",
-									"});"
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{fulfillment_url}}/health",
-							"host": [
-								"{{fulfillment_url}}"
-							],
-							"path": [
-								"health"
-							]
-						},
-						"description": "Health check endpoint for the Fulfillment service. The Fulfillment service handles shipping through integration events from the orchestrator."
-					},
-					"response": []
 				}
 			]
 		},
 		{
 			"name": "Email Service",
 			"description": "Email Service API - sends notification emails (simulated, no persistence)",
-			"item": [
-				{
-					"name": "Health Check",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"pm.test(\"Status code is 200\", function () {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
-									"pm.test(\"Service is healthy\", function () {",
-									"    var jsonData = pm.response.json();",
-									"    pm.expect(jsonData.status).to.eql(\"healthy\");",
-									"    pm.expect(jsonData.service).to.eql(\"Email\");",
-									"});"
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{email_url}}/health",
-							"host": [
-								"{{email_url}}"
-							],
-							"path": [
-								"health"
-							]
-						},
-						"description": "Health check endpoint for the Email service. The Email service sends notifications through integration events from the orchestrator; there's no other REST surface."
-					},
-					"response": []
-				}
-			]
-		},
-		{
-			"name": "Health Checks",
-			"description": "Quick health check for all services",
-			"item": [
-				{
-					"name": "All Services Health Check",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"pm.test(\"Orchestrator is healthy\", function () {",
-									"    pm.response.to.have.status(200);",
-									"});"
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{orchestrator_url}}/health",
-							"host": [
-								"{{orchestrator_url}}"
-							],
-							"path": [
-								"health"
-							]
-						},
-						"description": "Run this request to verify the Orchestrator service is running. Repeat against order_url/payment_url/fulfillment_url/email_url for the rest."
-					},
-					"response": []
-				}
-			]
+			"item": []
 		},
 		{
 			"name": "End-to-End Test",
@@ -702,13 +477,12 @@
 						"method": "POST",
 						"header": [],
 						"url": {
-							"raw": "{{orchestrator_url}}/api/sagas/orders/{{order_id}}/place",
+							"raw": "{{order_url}}/api/orders/{{order_id}}/place",
 							"host": [
-								"{{orchestrator_url}}"
+								"{{order_url}}"
 							],
 							"path": [
 								"api",
-								"sagas",
 								"orders",
 								"{{order_id}}",
 								"place"

@@ -1,47 +1,32 @@
 package com.openmind.orchestrator.api.controllers;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.openmind.order.contract.commands.PlaceOrderCommand;
-import com.openmind.orchestrator.api.saga.OrderPlacementSaga;
-import com.openmind.shared.messaging.MessagePublisher;
-import com.openmind.shared.messaging.Topics;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.NoResultException;
-import org.springframework.http.ResponseEntity;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.UUID;
 
-/**
- * Starts (or retries) an order placement saga, and lets you inspect its current state.
- * Publishing {@link PlaceOrderCommand} here goes through the same SNS/SQS path as every
- * other saga input - it's just a convenience trigger, not a shortcut into the saga.
- */
+import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.openmind.orchestrator.api.saga.OrderPlacementSaga;
+
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.NoResultException;
+
 @RestController
 @RequestMapping("/api/sagas")
 public class SagaController {
 
-    private final MessagePublisher messagePublisher;
     private final EntityManager entityManager;
     private final ObjectMapper objectMapper;
 
-    public SagaController(MessagePublisher messagePublisher, EntityManager entityManager, ObjectMapper objectMapper) {
-        this.messagePublisher = messagePublisher;
+    public SagaController(EntityManager entityManager, ObjectMapper objectMapper) {
         this.entityManager = entityManager;
         this.objectMapper = objectMapper;
-    }
-
-    @PostMapping("/orders/{orderId}/place")
-    public ResponseEntity<?> place(@PathVariable("orderId") UUID orderId) {
-        messagePublisher.publish(Topics.ORDER_COMMANDS, new PlaceOrderCommand(orderId, orderId));
-        return ResponseEntity.accepted().body(Map.of("orderId", orderId));
     }
 
     @GetMapping("/orders/{orderId}")

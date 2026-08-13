@@ -3,8 +3,6 @@ package com.openmind.shared.messaging;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.awspring.cloud.sns.core.SnsTemplate;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.stereotype.Component;
 
@@ -14,8 +12,6 @@ import org.springframework.stereotype.Component;
  */
 @Component
 public class MessagePublisher {
-
-    private static final Logger log = LoggerFactory.getLogger(MessagePublisher.class);
 
     private final SnsTemplate snsTemplate;
     private final ObjectMapper objectMapper;
@@ -32,7 +28,6 @@ public class MessagePublisher {
             String body = objectMapper.writeValueAsString(envelope);
 
             snsTemplate.send(topicName, MessageBuilder.withPayload(body).build());
-            log.info("[MessagePublisher] Published {} to topic {}", messageType, topicName);
         } catch (JsonProcessingException e) {
             throw new IllegalStateException("Failed to serialize message " + messageType, e);
         }
