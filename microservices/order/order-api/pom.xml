@@ -14,7 +14,7 @@
     <artifactId>order-api</artifactId>
     <packaging>jar</packaging>
     <name>Order :: Api</name>
-    <description>Order service: REST API, SNS/SQS wiring, MongoDB configuration</description>
+    <description>Order service: REST API, SNS/SQS wiring, Axon command/query gateway, JPA/Postgres configuration</description>
 
     <dependencies>
         <dependency>
@@ -24,6 +24,11 @@
         <dependency>
             <groupId>com.openmind</groupId>
             <artifactId>order-infrastructure</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.axonframework</groupId>
+            <artifactId>axon-spring-boot-starter</artifactId>
         </dependency>
 
         <dependency>

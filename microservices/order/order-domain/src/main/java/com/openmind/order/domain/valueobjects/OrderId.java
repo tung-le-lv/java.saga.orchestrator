@@ -1,18 +1,16 @@
 package com.openmind.order.domain.valueobjects;
 
-import com.openmind.shared.domain.StronglyTypedId;
+import jakarta.persistence.Embeddable;
 
 import java.util.UUID;
 
-public final class OrderId extends StronglyTypedId<OrderId> {
+@Embeddable
+public record OrderId(UUID value) {
 
-    // Required for MongoDB deserialization
-    protected OrderId() {
-        super();
-    }
-
-    private OrderId(UUID value) {
-        super(value);
+    public OrderId {
+        if (value == null || value.equals(new UUID(0L, 0L))) {
+            throw new IllegalArgumentException("Id cannot be empty");
+        }
     }
 
     public static OrderId from(UUID value) {
@@ -21,5 +19,10 @@ public final class OrderId extends StronglyTypedId<OrderId> {
 
     public static OrderId create() {
         return new OrderId(UUID.randomUUID());
+    }
+
+    @Override
+    public String toString() {
+        return value.toString();
     }
 }

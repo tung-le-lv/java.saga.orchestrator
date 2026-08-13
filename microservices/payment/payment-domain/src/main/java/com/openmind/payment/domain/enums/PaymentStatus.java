@@ -1,24 +1,29 @@
 package com.openmind.payment.domain.enums;
 
-import com.openmind.shared.domain.Enumeration;
+import java.util.Arrays;
 
-public final class PaymentStatus extends Enumeration {
+public enum PaymentStatus {
 
-    public static final PaymentStatus PENDING = new PaymentStatus(1, "Pending");
-    public static final PaymentStatus COMPLETED = new PaymentStatus(2, "Completed");
-    public static final PaymentStatus FAILED = new PaymentStatus(3, "Failed");
-    public static final PaymentStatus REFUNDED = new PaymentStatus(4, "Refunded");
+    PENDING("Pending"),
+    COMPLETED("Completed"),
+    FAILED("Failed"),
+    REFUNDED("Refunded");
 
-    // Required for MongoDB deserialization
-    protected PaymentStatus() {
-        super();
+    private final String displayName;
+
+    PaymentStatus(String displayName) {
+        this.displayName = displayName;
     }
 
-    public PaymentStatus(int id, String name) {
-        super(id, name);
+    public String getDisplayName() {
+        return displayName;
     }
 
     public static PaymentStatus fromDisplayName(String displayName) {
-        return Enumeration.fromDisplayName(PaymentStatus.class, displayName);
+        return Arrays.stream(values())
+                .filter(status -> status.displayName.equals(displayName))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "'" + displayName + "' is not a valid PaymentStatus"));
     }
 }

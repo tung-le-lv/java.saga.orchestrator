@@ -1,12 +1,11 @@
 package com.openmind.payment.application.queries.getpayment;
 
 import com.openmind.payment.domain.repositories.PaymentRepository;
-import com.openmind.shared.application.queries.QueryHandler;
-import com.openmind.shared.application.queries.QueryResult;
+import org.axonframework.queryhandling.QueryHandler;
 import org.springframework.stereotype.Component;
 
 @Component
-public class GetPaymentQueryHandler implements QueryHandler<GetPaymentQuery, PaymentDto> {
+public class GetPaymentQueryHandler {
 
     private final PaymentRepository paymentRepository;
 
@@ -14,13 +13,12 @@ public class GetPaymentQueryHandler implements QueryHandler<GetPaymentQuery, Pay
         this.paymentRepository = paymentRepository;
     }
 
-    @Override
-    public QueryResult<PaymentDto> handle(GetPaymentQuery query) {
+    @QueryHandler
+    public PaymentDto handle(GetPaymentQuery query) {
         return paymentRepository.findByOrderId(query.orderId())
                 .map(p -> new PaymentDto(
-                        p.getId(), p.getOrderId(), p.getCustomerId(), p.getAmount().getAmount(),
-                        p.getStatus().getName(), p.getTransactionId(), p.getFailureReason()))
-                .map(QueryResult::success)
-                .orElseGet(() -> QueryResult.failure("Payment not found"));
+                        p.getId(), p.getOrderId(), p.getCustomerId(), p.getAmount().amount(),
+                        p.getStatus().getDisplayName(), p.getTransactionId(), p.getFailureReason()))
+                .orElse(null);
     }
 }

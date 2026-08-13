@@ -1,24 +1,29 @@
 package com.openmind.fulfillment.domain.enums;
 
-import com.openmind.shared.domain.Enumeration;
+import java.util.Arrays;
 
-public final class FulfillmentStatus extends Enumeration {
+public enum FulfillmentStatus {
 
-    public static final FulfillmentStatus PENDING = new FulfillmentStatus(1, "Pending");
-    public static final FulfillmentStatus SHIPPED = new FulfillmentStatus(2, "Shipped");
-    public static final FulfillmentStatus FAILED = new FulfillmentStatus(3, "Failed");
-    public static final FulfillmentStatus CANCELLED = new FulfillmentStatus(4, "Cancelled");
+    PENDING("Pending"),
+    SHIPPED("Shipped"),
+    FAILED("Failed"),
+    CANCELLED("Cancelled");
 
-    // Required for MongoDB deserialization
-    protected FulfillmentStatus() {
-        super();
+    private final String displayName;
+
+    FulfillmentStatus(String displayName) {
+        this.displayName = displayName;
     }
 
-    public FulfillmentStatus(int id, String name) {
-        super(id, name);
+    public String getDisplayName() {
+        return displayName;
     }
 
     public static FulfillmentStatus fromDisplayName(String displayName) {
-        return Enumeration.fromDisplayName(FulfillmentStatus.class, displayName);
+        return Arrays.stream(values())
+                .filter(status -> status.displayName.equals(displayName))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "'" + displayName + "' is not a valid FulfillmentStatus"));
     }
 }

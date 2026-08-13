@@ -7,7 +7,7 @@ import org.springframework.stereotype.Component;
 /**
  * Listens to the "order-service-commands" queue (subscribed to the {@code order-commands}
  * SNS topic) and routes each message to its registered {@code IntegrationMessageHandler} by
- * envelope message type. Mirrors the original MassTransit receive endpoint of the same name.
+ * envelope message type.
  */
 @Component
 public class OrderCommandsQueueListener {

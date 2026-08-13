@@ -4,11 +4,10 @@ import io.awspring.cloud.sqs.annotation.SqsListener;
 import org.springframework.stereotype.Component;
 
 /**
- * One listener per orchestrator SQS queue, mirroring the original MassTransit receive
- * endpoints of the same names: "orchestrator-order-commands" (just PlaceOrderCommand),
- * "orchestrator-order-events", "orchestrator-payment-events", "orchestrator-fulfillment-events"
- * and "orchestrator-email-events". Every message is handed to the same bridge, which ignores
- * anything it doesn't recognize.
+ * One listener per orchestrator SQS queue: "orchestrator-order-commands" (just
+ * PlaceOrderCommand), "orchestrator-order-events", "orchestrator-payment-events",
+ * "orchestrator-fulfillment-events" and "orchestrator-email-events". Every message is handed
+ * to the same bridge, which ignores anything it doesn't recognize.
  */
 @Component
 public class OrchestratorQueueListeners {

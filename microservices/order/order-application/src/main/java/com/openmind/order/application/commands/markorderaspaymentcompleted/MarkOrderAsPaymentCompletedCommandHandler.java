@@ -3,16 +3,12 @@ package com.openmind.order.application.commands.markorderaspaymentcompleted;
 import com.openmind.order.domain.aggregates.Order;
 import com.openmind.order.domain.enums.OrderStatus;
 import com.openmind.order.domain.repositories.OrderRepository;
-import com.openmind.shared.application.commands.CommandHandler;
-import com.openmind.shared.application.commands.CommandResult;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.openmind.shared.domain.EntityNotFoundException;
+import org.axonframework.commandhandling.CommandHandler;
 import org.springframework.stereotype.Component;
 
 @Component
-public class MarkOrderAsPaymentCompletedCommandHandler implements CommandHandler<MarkOrderAsPaymentCompletedCommand, Void> {
-
-    private static final Logger log = LoggerFactory.getLogger(MarkOrderAsPaymentCompletedCommandHandler.class);
+public class MarkOrderAsPaymentCompletedCommandHandler {
 
     private final OrderRepository orderRepository;
 
@@ -20,21 +16,13 @@ public class MarkOrderAsPaymentCompletedCommandHandler implements CommandHandler
         this.orderRepository = orderRepository;
     }
 
-    @Override
-    public CommandResult<Void> handle(MarkOrderAsPaymentCompletedCommand command) {
-        try {
-            return orderRepository.findById(command.orderId())
-                    .map(order -> {
-                        ensurePaymentProcessing(order);
-                        order.setPaymentCompleted(command.transactionId(), command.correlationId());
-                        orderRepository.update(order);
-                        return CommandResult.<Void>success(null);
-                    })
-                    .orElseGet(() -> CommandResult.failure("Order not found", "ORDER_NOT_FOUND"));
-        } catch (Exception e) {
-            log.error("[MarkOrderAsPaymentCompleted] ERROR: {}", e.getMessage(), e);
-            return CommandResult.failure(e.getMessage(), "MARK_ORDER_PAYMENT_COMPLETED_FAILED");
-        }
+    @CommandHandler
+    public void handle(MarkOrderAsPaymentCompletedCommand command) {
+        var order = orderRepository.findById(command.orderId())
+                .orElseThrow(() -> new EntityNotFoundException("Order not found"));
+        ensurePaymentProcessing(order);
+        order.setPaymentCompleted(command.transactionId(), command.correlationId());
+        orderRepository.update(order);
     }
 
     // The saga drives payment directly from Pending -> PaymentCompleted/Failed; there's no

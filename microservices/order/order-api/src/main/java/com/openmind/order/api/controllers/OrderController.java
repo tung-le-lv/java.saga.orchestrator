@@ -5,10 +5,9 @@ import com.openmind.order.application.commands.createorder.CreateOrderCommand;
 import com.openmind.order.application.commands.createorder.OrderItemCommand;
 import com.openmind.order.application.queries.getorder.GetOrderQuery;
 import com.openmind.order.application.queries.getorder.OrderDto;
-import com.openmind.shared.application.commands.CommandBus;
-import com.openmind.shared.application.commands.CommandResult;
-import com.openmind.shared.application.queries.QueryBus;
-import com.openmind.shared.application.queries.QueryResult;
+import org.axonframework.commandhandling.gateway.CommandGateway;
+import org.axonframework.messaging.responsetypes.ResponseTypes;
+import org.axonframework.queryhandling.QueryGateway;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -25,19 +24,19 @@ import java.util.UUID;
 @RequestMapping("/api/orders")
 public class OrderController {
 
-    private final CommandBus commandBus;
-    private final QueryBus queryBus;
+    private final CommandGateway commandGateway;
+    private final QueryGateway queryGateway;
 
-    public OrderController(CommandBus commandBus, QueryBus queryBus) {
-        this.commandBus = commandBus;
-        this.queryBus = queryBus;
+    public OrderController(CommandGateway commandGateway, QueryGateway queryGateway) {
+        this.commandGateway = commandGateway;
+        this.queryGateway = queryGateway;
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<?> getOrder(@PathVariable("id") UUID id) {
-        QueryResult<OrderDto> result = queryBus.send(new GetOrderQuery(id));
-        return result.isSuccess()
-                ? ResponseEntity.ok(result.getData())
+        OrderDto order = queryGateway.query(new GetOrderQuery(id), ResponseTypes.instanceOf(OrderDto.class)).join();
+        return order != null
+                ? ResponseEntity.ok(order)
                 : ResponseEntity.notFound().build();
     }
 
@@ -57,11 +56,9 @@ public class OrderController {
                 request.shippingAddress().zipCode(),
                 request.shippingAddress().country());
 
-        CommandResult<UUID> result = commandBus.send(command);
+        UUID orderId = commandGateway.sendAndWait(command);
 
-        return result.isSuccess()
-                ? ResponseEntity.created(URI.create("/api/orders/" + result.getData()))
-                        .body(Map.of("orderId", result.getData()))
-                : ResponseEntity.badRequest().body(result.getErrorMessage());
+        return ResponseEntity.created(URI.create("/api/orders/" + orderId))
+                .body(Map.of("orderId", orderId));
     }
 }

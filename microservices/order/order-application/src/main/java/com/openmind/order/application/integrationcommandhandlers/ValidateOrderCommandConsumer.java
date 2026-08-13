@@ -5,11 +5,11 @@ import com.openmind.order.application.queries.getorder.OrderDto;
 import com.openmind.order.contract.commands.ValidateOrderCommand;
 import com.openmind.order.contract.events.OrderValidatedEvent;
 import com.openmind.order.contract.events.OrderValidationFailedEvent;
-import com.openmind.shared.application.queries.QueryBus;
-import com.openmind.shared.application.queries.QueryResult;
 import com.openmind.shared.messaging.IntegrationMessageHandler;
 import com.openmind.shared.messaging.MessagePublisher;
 import com.openmind.shared.messaging.Topics;
+import org.axonframework.messaging.responsetypes.ResponseTypes;
+import org.axonframework.queryhandling.QueryGateway;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -23,22 +23,20 @@ public class ValidateOrderCommandConsumer implements IntegrationMessageHandler<V
 
     private static final Logger log = LoggerFactory.getLogger(ValidateOrderCommandConsumer.class);
 
-    private final QueryBus queryBus;
+    private final QueryGateway queryGateway;
     private final MessagePublisher messagePublisher;
 
-    public ValidateOrderCommandConsumer(QueryBus queryBus, MessagePublisher messagePublisher) {
-        this.queryBus = queryBus;
+    public ValidateOrderCommandConsumer(QueryGateway queryGateway, MessagePublisher messagePublisher) {
+        this.queryGateway = queryGateway;
         this.messagePublisher = messagePublisher;
     }
 
     @Override
     public void handle(ValidateOrderCommand message) {
-        QueryResult<OrderDto> result = queryBus.send(new GetOrderQuery(message.orderId()));
+        OrderDto order = queryGateway.query(new GetOrderQuery(message.orderId()), ResponseTypes.instanceOf(OrderDto.class)).join();
         var correlationId = message.correlationId();
 
-        if (result.isSuccess() && result.getData() != null) {
-            OrderDto order = result.getData();
-
+        if (order != null) {
             messagePublisher.publish(Topics.ORDER_EVENTS, new OrderValidatedEvent(
                     correlationId,
                     order.id(),
@@ -51,7 +49,7 @@ public class ValidateOrderCommandConsumer implements IntegrationMessageHandler<V
 
             log.info("[Order] Published OrderValidatedEvent - OrderId: {}, CorrelationId: {}", order.id(), correlationId);
         } else {
-            String reason = result.getErrorMessage() != null ? result.getErrorMessage() : "Order not found";
+            String reason = "Order not found";
 
             messagePublisher.publish(Topics.ORDER_EVENTS, new OrderValidationFailedEvent(
                     correlationId, message.orderId(), reason));

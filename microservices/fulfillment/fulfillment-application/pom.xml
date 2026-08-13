@@ -26,8 +26,8 @@
             <artifactId>fulfillment-contract</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.openmind</groupId>
-            <artifactId>shared-application</artifactId>
+            <groupId>org.axonframework</groupId>
+            <artifactId>axon-messaging</artifactId>
         </dependency>
         <dependency>
             <groupId>com.openmind</groupId>

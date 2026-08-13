@@ -1,19 +1,21 @@
 package com.openmind.orchestrator.api.controllers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.mongodb.client.MongoDatabase;
-import com.mongodb.client.model.Filters;
 import com.openmind.order.contract.commands.PlaceOrderCommand;
+import com.openmind.orchestrator.api.saga.OrderPlacementSaga;
 import com.openmind.shared.messaging.MessagePublisher;
 import com.openmind.shared.messaging.Topics;
-import org.bson.Document;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.NoResultException;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.UUID;
 
@@ -27,12 +29,12 @@ import java.util.UUID;
 public class SagaController {
 
     private final MessagePublisher messagePublisher;
-    private final MongoDatabase mongoDatabase;
+    private final EntityManager entityManager;
     private final ObjectMapper objectMapper;
 
-    public SagaController(MessagePublisher messagePublisher, MongoDatabase mongoDatabase, ObjectMapper objectMapper) {
+    public SagaController(MessagePublisher messagePublisher, EntityManager entityManager, ObjectMapper objectMapper) {
         this.messagePublisher = messagePublisher;
-        this.mongoDatabase = mongoDatabase;
+        this.entityManager = entityManager;
         this.objectMapper = objectMapper;
     }
 
@@ -43,18 +45,37 @@ public class SagaController {
     }
 
     @GetMapping("/orders/{orderId}")
+    @Transactional(readOnly = true)
     public ResponseEntity<?> get(@PathVariable("orderId") UUID orderId) {
-        Document doc = mongoDatabase.getCollection("order_placement_sagas")
-                .find(Filters.eq("associations", new Document("$elemMatch",
-                        new Document("key", "orderId").append("value", orderId.toString()))))
-                .first();
+        String sagaId;
+        try {
+            // Axon's JpaSagaStore schema: AssociationValueEntry (sagaId/sagaType/associationKey/
+            // associationValue) indexes SagaEntry (sagaId/sagaType/revision/serializedSaga) rows.
+            sagaId = entityManager.createQuery(
+                            "SELECT a.sagaId FROM AssociationValueEntry a "
+                                    + "WHERE a.sagaType = :sagaType AND a.associationKey = :key AND a.associationValue = :value",
+                            String.class)
+                    .setParameter("sagaType", OrderPlacementSaga.class.getName())
+                    .setParameter("key", "orderId")
+                    .setParameter("value", orderId.toString())
+                    .setMaxResults(1)
+                    .getSingleResult();
+        } catch (NoResultException e) {
+            return ResponseEntity.notFound().build();
+        }
 
-        if (doc == null) {
+        byte[] serializedSaga;
+        try {
+            serializedSaga = entityManager.createQuery(
+                            "SELECT s.serializedSaga FROM SagaEntry s WHERE s.sagaId = :sagaId", byte[].class)
+                    .setParameter("sagaId", sagaId)
+                    .getSingleResult();
+        } catch (NoResultException e) {
             return ResponseEntity.notFound().build();
         }
 
         try {
-            Object saga = objectMapper.readValue(doc.getString("data"), Object.class);
+            Object saga = objectMapper.readValue(new String(serializedSaga, StandardCharsets.UTF_8), Object.class);
             return ResponseEntity.ok(saga);
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body(Map.of("error", "Failed to read saga state"));

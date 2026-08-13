@@ -17,11 +17,17 @@
     <description>DDD tactical pattern base types (Entity, AggregateRoot, ValueObject, Enumeration, DomainEvent, business rules)</description>
 
     <dependencies>
-        <!-- Only for @BsonIgnore on transient/in-memory-only properties (e.g. domain events)
-             that must never round-trip through MongoDB. No other Mongo-specific coupling here. -->
+        <!-- JPA annotation spec only (@Entity/@MappedSuperclass/@Id/@Version/...), no Hibernate
+             or other provider coupling here. -->
         <dependency>
-            <groupId>org.mongodb</groupId>
-            <artifactId>bson</artifactId>
+            <groupId>jakarta.persistence</groupId>
+            <artifactId>jakarta.persistence-api</artifactId>
+        </dependency>
+        <!-- @DomainEvents/@AfterDomainEventPublication only, so any Spring Data repository's
+             save(...) auto-publishes an aggregate's pending domain events. -->
+        <dependency>
+            <groupId>org.springframework.data</groupId>
+            <artifactId>spring-data-commons</artifactId>
         </dependency>
     </dependencies>
 </project>

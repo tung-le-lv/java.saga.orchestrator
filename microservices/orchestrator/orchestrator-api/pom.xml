@@ -14,7 +14,7 @@
     <artifactId>orchestrator-api</artifactId>
     <packaging>jar</packaging>
     <name>Orchestrator :: Api</name>
-    <description>Order placement saga orchestrator: Axon-managed saga bridged to SNS/SQS, custom MongoDB saga store</description>
+    <description>Order placement saga orchestrator: Axon-managed saga bridged to SNS/SQS, Axon's native JPA saga store</description>
 
     <dependencies>
         <dependency>
@@ -37,10 +37,6 @@
             <groupId>com.openmind</groupId>
             <artifactId>shared-messaging</artifactId>
         </dependency>
-        <dependency>
-            <groupId>com.openmind</groupId>
-            <artifactId>shared-mongodb</artifactId>
-        </dependency>
 
         <dependency>
             <groupId>org.axonframework</groupId>
@@ -52,6 +48,10 @@
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-jpa</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.awspring.cloud</groupId>
             <artifactId>spring-cloud-aws-starter-sns</artifactId>
         </dependency>
@@ -60,8 +60,9 @@
             <artifactId>spring-cloud-aws-starter-sqs</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.mongodb</groupId>
-            <artifactId>mongodb-driver-sync</artifactId>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <scope>runtime</scope>
         </dependency>
         <dependency>
             <groupId>org.springdoc</groupId>

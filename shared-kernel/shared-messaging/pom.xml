@@ -14,7 +14,7 @@
     <artifactId>shared-messaging</artifactId>
     <packaging>jar</packaging>
     <name>Shared :: Messaging</name>
-    <description>SNS publish / envelope-based SQS message dispatch, replicating the MassTransit fan-out topology over AWS SQS/SNS (LocalStack)</description>
+    <description>SNS publish / envelope-based SQS message dispatch for cross-service integration events (LocalStack)</description>
 
     <dependencies>
         <dependency>

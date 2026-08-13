@@ -3,7 +3,7 @@ WORKDIR /workspace
 
 COPY pom.xml .
 COPY shared-kernel shared-kernel
-COPY microservices/payment microservices/payment
+COPY microservices microservices
 
 RUN mvn -q -pl microservices/payment/payment-api -am package -DskipTests
 

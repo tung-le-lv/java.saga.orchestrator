@@ -1,8 +1,9 @@
 package com.openmind.order.application.integrationcommandhandlers;
 
 import com.openmind.order.contract.commands.CancelOrderCommand;
-import com.openmind.shared.application.commands.CommandBus;
 import com.openmind.shared.messaging.IntegrationMessageHandler;
+import org.axonframework.commandhandling.CommandExecutionException;
+import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -12,19 +13,23 @@ public class CancelOrderCommandConsumer implements IntegrationMessageHandler<Can
 
     private static final Logger log = LoggerFactory.getLogger(CancelOrderCommandConsumer.class);
 
-    private final CommandBus commandBus;
+    private final CommandGateway commandGateway;
 
-    public CancelOrderCommandConsumer(CommandBus commandBus) {
-        this.commandBus = commandBus;
+    public CancelOrderCommandConsumer(CommandGateway commandGateway) {
+        this.commandGateway = commandGateway;
     }
 
     @Override
     public void handle(CancelOrderCommand message) {
-        var result = commandBus.send(new com.openmind.order.application.commands.cancelorder.CancelOrderCommand(
-                message.orderId(), message.reason(), message.correlationId()));
-
-        if (!result.isSuccess()) {
-            log.warn("[Order] CancelOrder failed - OrderId: {}, Reason: {}", message.orderId(), result.getErrorMessage());
+        try {
+            commandGateway.sendAndWait(new com.openmind.order.application.commands.cancelorder.CancelOrderCommand(
+                    message.orderId(), message.reason(), message.correlationId()));
+        } catch (CommandExecutionException e) {
+            log.warn("[Order] CancelOrder failed - OrderId: {}, Reason: {}", message.orderId(), causeMessage(e));
         }
+    }
+
+    private String causeMessage(CommandExecutionException e) {
+        return e.getCause() != null ? e.getCause().getMessage() : e.getMessage();
     }
 }

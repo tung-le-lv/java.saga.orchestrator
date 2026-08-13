@@ -16,6 +16,15 @@ import com.openmind.order.domain.valueobjects.Address;
 import com.openmind.order.domain.valueobjects.CustomerId;
 import com.openmind.order.domain.valueobjects.Money;
 import com.openmind.shared.domain.AggregateRoot;
+import jakarta.persistence.AttributeOverride;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Embedded;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.Table;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -25,19 +34,33 @@ import java.util.UUID;
 /**
  * Order aggregate root following DDD tactical patterns.
  */
+@jakarta.persistence.Entity
+@Table(name = "orders")
 public class Order extends AggregateRoot {
 
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "order_id")
     private List<OrderItem> items = new ArrayList<>();
 
+    @Embedded
     private CustomerId customerId;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private OrderStatus status;
+
+    @Embedded
     private Address shippingAddress;
+
+    @Embedded
+    @AttributeOverride(name = "amount", column = @Column(name = "total_amount"))
     private Money totalAmount;
+
     private String cancellationReason;
     private String paymentTransactionId;
     private String trackingNumber;
 
-    // Required for MongoDB deserialization
+    // Required by JPA
     protected Order() {
         super();
         this.customerId = CustomerId.create();
@@ -56,7 +79,7 @@ public class Order extends AggregateRoot {
 
     public static Order create(UUID orderId, CustomerId customerId, Address shippingAddress) {
         Order order = new Order(orderId, customerId, shippingAddress);
-        order.emit(new OrderCreatedDomainEvent(orderId, customerId.getValue()));
+        order.emit(new OrderCreatedDomainEvent(orderId, customerId.value()));
         return order;
     }
 
@@ -150,63 +173,31 @@ public class Order extends AggregateRoot {
         return Collections.unmodifiableList(items);
     }
 
-    public void setItems(List<OrderItem> items) {
-        this.items = items;
-    }
-
     public CustomerId getCustomerId() {
         return customerId;
-    }
-
-    public void setCustomerId(CustomerId customerId) {
-        this.customerId = customerId;
     }
 
     public OrderStatus getStatus() {
         return status;
     }
 
-    public void setStatus(OrderStatus status) {
-        this.status = status;
-    }
-
     public Address getShippingAddress() {
         return shippingAddress;
-    }
-
-    public void setShippingAddress(Address shippingAddress) {
-        this.shippingAddress = shippingAddress;
     }
 
     public Money getTotalAmount() {
         return totalAmount;
     }
 
-    public void setTotalAmount(Money totalAmount) {
-        this.totalAmount = totalAmount;
-    }
-
     public String getCancellationReason() {
         return cancellationReason;
-    }
-
-    public void setCancellationReason(String cancellationReason) {
-        this.cancellationReason = cancellationReason;
     }
 
     public String getPaymentTransactionId() {
         return paymentTransactionId;
     }
 
-    public void setPaymentTransactionId(String paymentTransactionId) {
-        this.paymentTransactionId = paymentTransactionId;
-    }
-
     public String getTrackingNumber() {
         return trackingNumber;
-    }
-
-    public void setTrackingNumber(String trackingNumber) {
-        this.trackingNumber = trackingNumber;
     }
 }

@@ -3,10 +3,9 @@ package com.openmind.payment.api.controllers;
 import com.openmind.payment.application.commands.retrypayment.RetryPaymentCommand;
 import com.openmind.payment.application.queries.getpayment.GetPaymentQuery;
 import com.openmind.payment.application.queries.getpayment.PaymentDto;
-import com.openmind.shared.application.commands.CommandBus;
-import com.openmind.shared.application.commands.CommandResult;
-import com.openmind.shared.application.queries.QueryBus;
-import com.openmind.shared.application.queries.QueryResult;
+import org.axonframework.commandhandling.gateway.CommandGateway;
+import org.axonframework.messaging.responsetypes.ResponseTypes;
+import org.axonframework.queryhandling.QueryGateway;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -20,19 +19,19 @@ import java.util.UUID;
 @RequestMapping("/api/payments")
 public class PaymentController {
 
-    private final CommandBus commandBus;
-    private final QueryBus queryBus;
+    private final CommandGateway commandGateway;
+    private final QueryGateway queryGateway;
 
-    public PaymentController(CommandBus commandBus, QueryBus queryBus) {
-        this.commandBus = commandBus;
-        this.queryBus = queryBus;
+    public PaymentController(CommandGateway commandGateway, QueryGateway queryGateway) {
+        this.commandGateway = commandGateway;
+        this.queryGateway = queryGateway;
     }
 
     @GetMapping("/order/{orderId}")
     public ResponseEntity<?> getByOrder(@PathVariable("orderId") UUID orderId) {
-        QueryResult<PaymentDto> result = queryBus.send(new GetPaymentQuery(orderId));
-        return result.isSuccess()
-                ? ResponseEntity.ok(result.getData())
+        PaymentDto payment = queryGateway.query(new GetPaymentQuery(orderId), ResponseTypes.instanceOf(PaymentDto.class)).join();
+        return payment != null
+                ? ResponseEntity.ok(payment)
                 : ResponseEntity.notFound().build();
     }
 
@@ -42,9 +41,7 @@ public class PaymentController {
      */
     @PostMapping("/order/{orderId}/retry")
     public ResponseEntity<?> retry(@PathVariable("orderId") UUID orderId) {
-        CommandResult<Void> result = commandBus.send(new RetryPaymentCommand(orderId));
-        return result.isSuccess()
-                ? ResponseEntity.ok().build()
-                : ResponseEntity.badRequest().body(result.getErrorMessage());
+        commandGateway.sendAndWait(new RetryPaymentCommand(orderId));
+        return ResponseEntity.ok().build();
     }
 }

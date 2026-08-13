@@ -4,12 +4,11 @@ import com.openmind.order.contract.OrderItemDto;
 import com.openmind.order.domain.aggregates.Order;
 import com.openmind.order.domain.entities.OrderItem;
 import com.openmind.order.domain.repositories.OrderRepository;
-import com.openmind.shared.application.queries.QueryHandler;
-import com.openmind.shared.application.queries.QueryResult;
+import org.axonframework.queryhandling.QueryHandler;
 import org.springframework.stereotype.Component;
 
 @Component
-public class GetOrderQueryHandler implements QueryHandler<GetOrderQuery, OrderDto> {
+public class GetOrderQueryHandler {
 
     private final OrderRepository orderRepository;
 
@@ -17,12 +16,11 @@ public class GetOrderQueryHandler implements QueryHandler<GetOrderQuery, OrderDt
         this.orderRepository = orderRepository;
     }
 
-    @Override
-    public QueryResult<OrderDto> handle(GetOrderQuery query) {
+    @QueryHandler
+    public OrderDto handle(GetOrderQuery query) {
         return orderRepository.findById(query.orderId())
                 .map(this::toDto)
-                .map(QueryResult::success)
-                .orElseGet(() -> QueryResult.failure("Order not found"));
+                .orElse(null);
     }
 
     private OrderDto toDto(Order order) {
@@ -32,14 +30,14 @@ public class GetOrderQueryHandler implements QueryHandler<GetOrderQuery, OrderDt
 
         return new OrderDto(
                 order.getId(),
-                order.getCustomerId().getValue(),
-                order.getStatus().getName(),
-                order.getTotalAmount().getAmount(),
+                order.getCustomerId().value(),
+                order.getStatus().getDisplayName(),
+                order.getTotalAmount().amount(),
                 order.getShippingAddress().toString(),
                 items);
     }
 
     private OrderItemDto toItemDto(OrderItem item) {
-        return new OrderItemDto(item.getProductId(), item.getProductName(), item.getQuantity(), item.getUnitPrice().getAmount());
+        return new OrderItemDto(item.getProductId(), item.getProductName(), item.getQuantity(), item.getUnitPrice().amount());
     }
 }

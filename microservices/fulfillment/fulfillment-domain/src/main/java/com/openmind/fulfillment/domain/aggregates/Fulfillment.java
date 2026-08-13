@@ -6,6 +6,13 @@ import com.openmind.fulfillment.domain.events.FulfillmentFailedDomainEvent;
 import com.openmind.fulfillment.domain.events.OrderShippedDomainEvent;
 import com.openmind.fulfillment.domain.rules.FulfillmentMustBeInStatusRule;
 import com.openmind.shared.domain.AggregateRoot;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.Table;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -16,18 +23,31 @@ import java.util.UUID;
 /**
  * Fulfillment aggregate root following DDD tactical patterns.
  */
+@jakarta.persistence.Entity
+@Table(name = "fulfillments")
 public class Fulfillment extends AggregateRoot {
 
+    @Column(nullable = false)
     private UUID orderId;
+
+    @Column(nullable = false)
     private UUID customerId;
+
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "fulfillment_id")
     private List<FulfillmentItem> items = new ArrayList<>();
+
     private String shippingAddress;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private FulfillmentStatus status;
+
     private String trackingNumber;
     private Instant estimatedDelivery;
     private String failureReason;
 
-    // Required for MongoDB deserialization
+    // Required by JPA
     protected Fulfillment() {
         super();
         this.status = FulfillmentStatus.PENDING;
@@ -82,63 +102,31 @@ public class Fulfillment extends AggregateRoot {
         return orderId;
     }
 
-    public void setOrderId(UUID orderId) {
-        this.orderId = orderId;
-    }
-
     public UUID getCustomerId() {
         return customerId;
-    }
-
-    public void setCustomerId(UUID customerId) {
-        this.customerId = customerId;
     }
 
     public List<FulfillmentItem> getItems() {
         return Collections.unmodifiableList(items);
     }
 
-    public void setItems(List<FulfillmentItem> items) {
-        this.items = items;
-    }
-
     public String getShippingAddress() {
         return shippingAddress;
-    }
-
-    public void setShippingAddress(String shippingAddress) {
-        this.shippingAddress = shippingAddress;
     }
 
     public FulfillmentStatus getStatus() {
         return status;
     }
 
-    public void setStatus(FulfillmentStatus status) {
-        this.status = status;
-    }
-
     public String getTrackingNumber() {
         return trackingNumber;
-    }
-
-    public void setTrackingNumber(String trackingNumber) {
-        this.trackingNumber = trackingNumber;
     }
 
     public Instant getEstimatedDelivery() {
         return estimatedDelivery;
     }
 
-    public void setEstimatedDelivery(Instant estimatedDelivery) {
-        this.estimatedDelivery = estimatedDelivery;
-    }
-
     public String getFailureReason() {
         return failureReason;
-    }
-
-    public void setFailureReason(String failureReason) {
-        this.failureReason = failureReason;
     }
 }

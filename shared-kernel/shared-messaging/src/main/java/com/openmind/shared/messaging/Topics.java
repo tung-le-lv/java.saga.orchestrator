@@ -2,10 +2,9 @@ package com.openmind.shared.messaging;
 
 /**
  * SNS topic names. Every message belonging to a given group (all order commands, all order
- * events, ...) fans out to the same topic, matching the original MassTransit
- * {@code cfg.Message<T>(m => m.SetEntityName(...))} configuration. Each service's SQS queue
- * subscribes to the topics it cares about and routes incoming messages by their
- * {@code messageType} (see {@link MessageEnvelope}).
+ * events, ...) fans out to the same topic. Each service's SQS queue subscribes to the topics
+ * it cares about and routes incoming messages by their {@code messageType} (see
+ * {@link MessageEnvelope}).
  */
 public final class Topics {
 

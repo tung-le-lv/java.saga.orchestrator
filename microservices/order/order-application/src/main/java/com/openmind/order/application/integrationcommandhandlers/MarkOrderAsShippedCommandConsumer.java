@@ -1,8 +1,9 @@
 package com.openmind.order.application.integrationcommandhandlers;
 
 import com.openmind.order.contract.commands.MarkOrderAsShippedCommand;
-import com.openmind.shared.application.commands.CommandBus;
 import com.openmind.shared.messaging.IntegrationMessageHandler;
+import org.axonframework.commandhandling.CommandExecutionException;
+import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -12,19 +13,23 @@ public class MarkOrderAsShippedCommandConsumer implements IntegrationMessageHand
 
     private static final Logger log = LoggerFactory.getLogger(MarkOrderAsShippedCommandConsumer.class);
 
-    private final CommandBus commandBus;
+    private final CommandGateway commandGateway;
 
-    public MarkOrderAsShippedCommandConsumer(CommandBus commandBus) {
-        this.commandBus = commandBus;
+    public MarkOrderAsShippedCommandConsumer(CommandGateway commandGateway) {
+        this.commandGateway = commandGateway;
     }
 
     @Override
     public void handle(MarkOrderAsShippedCommand message) {
-        var result = commandBus.send(new com.openmind.order.application.commands.markorderasshipped.MarkOrderAsShippedCommand(
-                message.orderId(), message.trackingNumber(), message.correlationId()));
-
-        if (!result.isSuccess()) {
-            log.warn("[Order] MarkOrderAsShipped failed - OrderId: {}, Reason: {}", message.orderId(), result.getErrorMessage());
+        try {
+            commandGateway.sendAndWait(new com.openmind.order.application.commands.markorderasshipped.MarkOrderAsShippedCommand(
+                    message.orderId(), message.trackingNumber(), message.correlationId()));
+        } catch (CommandExecutionException e) {
+            log.warn("[Order] MarkOrderAsShipped failed - OrderId: {}, Reason: {}", message.orderId(), causeMessage(e));
         }
+    }
+
+    private String causeMessage(CommandExecutionException e) {
+        return e.getCause() != null ? e.getCause().getMessage() : e.getMessage();
     }
 }

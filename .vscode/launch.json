@@ -1,0 +1,68 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "java",
+            "name": "Order Api (dev)",
+            "request": "launch",
+            "mainClass": "com.openmind.order.api.OrderApiApplication",
+            "projectName": "order-api",
+            "env": {
+                "SPRING_PROFILES_ACTIVE": "dev"
+            }
+        },
+        {
+            "type": "java",
+            "name": "Payment Api (dev)",
+            "request": "launch",
+            "mainClass": "com.openmind.payment.api.PaymentApiApplication",
+            "projectName": "payment-api",
+            "env": {
+                "SPRING_PROFILES_ACTIVE": "dev"
+            }
+        },
+        {
+            "type": "java",
+            "name": "Fulfillment Api (dev)",
+            "request": "launch",
+            "mainClass": "com.openmind.fulfillment.api.FulfillmentApiApplication",
+            "projectName": "fulfillment-api",
+            "env": {
+                "SPRING_PROFILES_ACTIVE": "dev"
+            }
+        },
+        {
+            "type": "java",
+            "name": "Email Api (dev)",
+            "request": "launch",
+            "mainClass": "com.openmind.email.api.EmailApiApplication",
+            "projectName": "email-api",
+            "env": {
+                "SPRING_PROFILES_ACTIVE": "dev"
+            }
+        },
+        {
+            "type": "java",
+            "name": "Orchestrator Api (dev)",
+            "request": "launch",
+            "mainClass": "com.openmind.orchestrator.api.OrchestratorApiApplication",
+            "projectName": "orchestrator-api",
+            "env": {
+                "SPRING_PROFILES_ACTIVE": "dev"
+            }
+        }
+    ],
+    "compounds": [
+        {
+            "name": "Launch All Services (dev)",
+            "configurations": [
+                "Order Api (dev)",
+                "Payment Api (dev)",
+                "Fulfillment Api (dev)",
+                "Email Api (dev)",
+                "Orchestrator Api (dev)"
+            ],
+            "stopAll": true
+        }
+    ]
+}

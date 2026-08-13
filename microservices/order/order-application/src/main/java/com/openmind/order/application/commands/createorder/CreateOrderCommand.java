@@ -1,6 +1,5 @@
 package com.openmind.order.application.commands.createorder;
 
-import com.openmind.shared.application.commands.Command;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
@@ -17,5 +16,5 @@ public record CreateOrderCommand(
         @NotBlank(message = "City is required") String city,
         String state,
         String zipCode,
-        @NotBlank(message = "Country is required") String country) implements Command<UUID> {
+        @NotBlank(message = "Country is required") String country) {
 }

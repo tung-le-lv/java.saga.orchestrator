@@ -22,7 +22,7 @@ public class FulfillmentMustBeInStatusRule implements BusinessRule {
 
     @Override
     public String getMessage() {
-        return "Cannot " + action + ": fulfillment must be in status '" + requiredStatus.getName()
-                + "' but is in '" + currentStatus.getName() + "'";
+        return "Cannot " + action + ": fulfillment must be in status '" + requiredStatus.getDisplayName()
+                + "' but is in '" + currentStatus.getDisplayName() + "'";
     }
 }

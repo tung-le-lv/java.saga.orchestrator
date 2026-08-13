@@ -22,7 +22,7 @@ public class PaymentMustBeInStatusRule implements BusinessRule {
 
     @Override
     public String getMessage() {
-        return "Cannot " + action + ": payment must be in status '" + requiredStatus.getName()
-                + "' but is in '" + currentStatus.getName() + "'";
+        return "Cannot " + action + ": payment must be in status '" + requiredStatus.getDisplayName()
+                + "' but is in '" + currentStatus.getDisplayName() + "'";
     }
 }

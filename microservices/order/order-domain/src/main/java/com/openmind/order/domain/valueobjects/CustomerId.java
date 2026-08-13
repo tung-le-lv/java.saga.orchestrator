@@ -1,18 +1,16 @@
 package com.openmind.order.domain.valueobjects;
 
-import com.openmind.shared.domain.StronglyTypedId;
+import jakarta.persistence.Embeddable;
 
 import java.util.UUID;
 
-public final class CustomerId extends StronglyTypedId<CustomerId> {
+@Embeddable
+public record CustomerId(UUID value) {
 
-    // Required for MongoDB deserialization
-    protected CustomerId() {
-        super();
-    }
-
-    private CustomerId(UUID value) {
-        super(value);
+    public CustomerId {
+        if (value == null || value.equals(new UUID(0L, 0L))) {
+            throw new IllegalArgumentException("Id cannot be empty");
+        }
     }
 
     public static CustomerId from(UUID value) {
@@ -21,5 +19,10 @@ public final class CustomerId extends StronglyTypedId<CustomerId> {
 
     public static CustomerId create() {
         return new CustomerId(UUID.randomUUID());
+    }
+
+    @Override
+    public String toString() {
+        return value.toString();
     }
 }

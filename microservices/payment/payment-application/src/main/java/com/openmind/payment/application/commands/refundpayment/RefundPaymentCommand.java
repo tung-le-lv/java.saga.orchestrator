@@ -1,6 +1,5 @@
 package com.openmind.payment.application.commands.refundpayment;
 
-import com.openmind.shared.application.commands.Command;
 import jakarta.validation.constraints.NotNull;
 
 import java.util.UUID;
@@ -9,5 +8,5 @@ public record RefundPaymentCommand(
         @NotNull UUID orderId,
         UUID paymentId,
         String reason,
-        UUID correlationId) implements Command<Void> {
+        UUID correlationId) {
 }

@@ -2,18 +2,32 @@ package com.openmind.order.domain.entities;
 
 import com.openmind.order.domain.valueobjects.Money;
 import com.openmind.shared.domain.Entity;
+import jakarta.persistence.AttributeOverride;
+import jakarta.persistence.Column;
+import jakarta.persistence.Embedded;
+import jakarta.persistence.Table;
 
 import java.math.BigDecimal;
 import java.util.UUID;
 
+@jakarta.persistence.Entity
+@Table(name = "order_items")
 public class OrderItem extends Entity {
 
+    @Column(nullable = false)
     private UUID productId;
+
+    @Column(nullable = false)
     private String productName;
+
+    @Column(nullable = false)
     private int quantity;
+
+    @Embedded
+    @AttributeOverride(name = "amount", column = @Column(name = "unit_price"))
     private Money unitPrice;
 
-    // Required for MongoDB deserialization
+    // Required by JPA
     protected OrderItem() {
         super();
     }
@@ -34,38 +48,22 @@ public class OrderItem extends Entity {
     }
 
     public Money getTotalPrice() {
-        return Money.create(unitPrice.getAmount().multiply(BigDecimal.valueOf(quantity)));
+        return Money.create(unitPrice.amount().multiply(BigDecimal.valueOf(quantity)));
     }
 
     public UUID getProductId() {
         return productId;
     }
 
-    public void setProductId(UUID productId) {
-        this.productId = productId;
-    }
-
     public String getProductName() {
         return productName;
-    }
-
-    public void setProductName(String productName) {
-        this.productName = productName;
     }
 
     public int getQuantity() {
         return quantity;
     }
 
-    public void setQuantity(int quantity) {
-        this.quantity = quantity;
-    }
-
     public Money getUnitPrice() {
         return unitPrice;
-    }
-
-    public void setUnitPrice(Money unitPrice) {
-        this.unitPrice = unitPrice;
     }
 }

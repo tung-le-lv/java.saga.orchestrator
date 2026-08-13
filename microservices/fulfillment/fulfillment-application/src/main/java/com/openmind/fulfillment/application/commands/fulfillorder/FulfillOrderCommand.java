@@ -1,6 +1,5 @@
 package com.openmind.fulfillment.application.commands.fulfillorder;
 
-import com.openmind.shared.application.commands.Command;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 
@@ -12,5 +11,5 @@ public record FulfillOrderCommand(
         @NotNull UUID customerId,
         @NotEmpty List<FulfillmentItemCommand> items,
         String shippingAddress,
-        UUID correlationId) implements Command<UUID> {
+        UUID correlationId) {
 }

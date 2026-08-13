@@ -16,9 +16,18 @@ spring:
       sqs:
         endpoint: http://localhost:4566
 
-mongodb:
-  connection-string: mongodb://localhost:27017
-  database-name: FulfillmentDb
+  datasource:
+    url: jdbc:postgresql://localhost:5432/fulfillment_db
+    username: postgres
+    password: postgres
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+
+axon:
+  axonserver:
+    enabled: false
 
 springdoc:
   swagger-ui:

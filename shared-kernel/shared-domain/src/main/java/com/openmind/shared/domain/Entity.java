@@ -1,28 +1,28 @@
 package com.openmind.shared.domain;
 
-import org.bson.codecs.pojo.annotations.BsonIgnore;
+import jakarta.persistence.Id;
+import jakarta.persistence.MappedSuperclass;
+import jakarta.persistence.Transient;
 
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
 /**
  * Base class for all domain entities following DDD tactical patterns.
- * <p>
- * Ids are fixed to {@link UUID} (rather than kept generic like the original .NET
- * {@code Entity<TId>}) because every entity in this system uses one, and a generic id type
- * parameter erases at runtime in a way that defeats the MongoDB POJO codec's automatic
- * property-type resolution.
  */
+@MappedSuperclass
 public abstract class Entity {
 
+    @Id
     private UUID id;
+
     private Instant createdAt = Instant.now();
     private Instant updatedAt;
 
+    @Transient
     private final List<DomainEvent> domainEvents = new ArrayList<>();
 
     protected Entity() {
@@ -36,10 +36,7 @@ public abstract class Entity {
         return id;
     }
 
-    // Public rather than protected: the MongoDB POJO codec's automatic property discovery
-    // only sees public getter/setter pairs (java.lang.Class#getMethods()), so a non-public
-    // setter is silently treated as encode-only and never called on decode.
-    public void setId(UUID id) {
+    protected void setId(UUID id) {
         this.id = id;
     }
 
@@ -47,25 +44,12 @@ public abstract class Entity {
         return createdAt;
     }
 
-    public void setCreatedAt(Instant createdAt) {
-        this.createdAt = createdAt;
-    }
-
     public Instant getUpdatedAt() {
         return updatedAt;
     }
 
-    public void setUpdatedAt(Instant updatedAt) {
-        this.updatedAt = updatedAt;
-    }
-
     protected void setUpdatedAt() {
         this.updatedAt = Instant.now();
-    }
-
-    @BsonIgnore
-    public List<DomainEvent> getDomainEvents() {
-        return Collections.unmodifiableList(domainEvents);
     }
 
     /**
@@ -81,12 +65,8 @@ public abstract class Entity {
         domainEvents.add(domainEvent);
     }
 
-    public void removeDomainEvent(DomainEvent domainEvent) {
-        domainEvents.remove(domainEvent);
-    }
-
-    public void clearDomainEvents() {
-        domainEvents.clear();
+    protected List<DomainEvent> pendingDomainEvents() {
+        return domainEvents;
     }
 
     @Override
@@ -94,17 +74,14 @@ public abstract class Entity {
         if (this == obj) {
             return true;
         }
-        if (!(obj instanceof Entity other)) {
+        if (!(obj instanceof Entity other) || getClass() != other.getClass()) {
             return false;
         }
-        if (getClass() != other.getClass()) {
-            return false;
-        }
-        return Objects.equals(id, other.id);
+        return id != null && Objects.equals(id, other.id);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(id);
+        return getClass().hashCode();
     }
 }

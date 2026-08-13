@@ -1,10 +1,4 @@
-# Saga Orchestrator
-
-A comprehensive implementation of the **Saga Orchestrator Pattern** for distributed transactions in a microservices architecture, written in Java (Spring Boot / Maven multi-module), ported from an original .NET implementation.
-
 ## Architecture Overview
-
-This solution implements an **Order Placement Orchestrator** that coordinates a distributed transaction across multiple microservices over AWS SNS/SQS (LocalStack for local development):
 
 ```
 ┌─────────────────┐
@@ -45,8 +39,8 @@ This solution implements an **Order Placement Orchestrator** that coordinates a 
       │               │                │                
       ▼               ▼                ▼                
 ┌───────────┐   ┌───────────┐   ┌──────────────┐   
-│  OrderDb  │   │ PaymentDb │   │FulfillmentDb │   
-│ (MongoDB) │   │ (MongoDB) │   │  (MongoDB)   │   
+│ order_db  │   │payment_db │   │fulfillment_db│   
+│(PostgreSQL)│  │(PostgreSQL)│  │ (PostgreSQL) │   
 └───────────┘   └───────────┘   └──────────────┘
 
                       ▲
@@ -58,46 +52,44 @@ This solution implements an **Order Placement Orchestrator** that coordinates a 
 └─────────────────────────┘
 ```
 
-All cross-service communication is fan-out messaging over SNS topics (`order-commands`, `order-events`, `payment-commands`, `payment-events`, `fulfillment-commands`, `fulfillment-events`, `email-commands`, `email-events`), each consumed by one or more SQS queues — see `docker/localstack-init/init-topology.sh` for the exact topology.
-
 ## Features
 
 ### Saga Orchestrator Pattern
 - **Centralized Workflow Management**: Single point of control for the entire order placement process
 - **State Machine Implementation**: `OrderPlacementSaga` using the Axon Framework's `@Saga`/`@SagaEventHandler` model, correlated by `orderId`
-- **Custom MongoDB Saga Store**: Axon ships JPA/JDBC saga stores but no MongoDB one — `MongoSagaStore` fills that gap (collection `order_placement_sagas`)
+- **Native Axon Saga Persistence**: Axon's own `JpaSagaStore`, autoconfigured against the `orchestrator_db` Postgres database
 - **Compensating Transactions**: Automatic rollback capabilities (refunds, cancellations)
 - **Queryable State**: `GET /api/sagas/orders/{orderId}` while a saga is active (completed sagas are removed from the store, matching Axon's lifecycle semantics)
 
 ### Clean Architecture per Microservice
 Order/Payment/Fulfillment each follow Clean Architecture with:
-- **Domain Layer**: Entities, Value Objects, Aggregates, Domain Events
-- **Application Layer**: hand-rolled CQRS (Commands/Queries) with a `CommandBus`/`QueryBus`, Handlers
-- **Infrastructure Layer**: MongoDB repositories
+- **Domain Layer**: Entities, Value Objects (Java records), Aggregates, Domain Events
+- **Application Layer**: CQRS (Commands/Queries) via Axon's `CommandGateway`/`QueryGateway` and `@CommandHandler`/`@QueryHandler`-annotated handlers
+- **Infrastructure Layer**: Spring Data JPA repositories
 - **API Layer**: Spring MVC REST controllers, SQS listeners, springdoc/Swagger UI
 
 Email is intentionally simpler (no persistence) — it just consumes commands and simulates sending.
 
 ### DDD Tactical Patterns
 - **Aggregate Roots**: Order, Payment, Fulfillment
-- **Value Objects**: Money, Address, CustomerId, OrderId
-- **Domain Events**: dispatched via Spring's `ApplicationEventPublisher`, translated to integration events published to SNS
+- **Value Objects**: Money, Address, CustomerId, OrderId (Java records, `@Embeddable`)
+- **Domain Events**: dispatched via Spring Data's `@DomainEvents`/`@AfterDomainEventPublication` on `save(...)`, translated to integration events published to SNS
 - **Strongly Typed IDs**: Type-safe identifiers
-- **Smart Enums**: OrderStatus, PaymentStatus, FulfillmentStatus
+- **Enums**: OrderStatus, PaymentStatus, FulfillmentStatus
 
 ### Technology Stack
 - **Java 21**, **Maven** multi-module reactor
 - **Spring Boot 3.4** (Web, Validation)
-- **Axon Framework 4.10** for the saga (lifecycle/correlation/persistence only — cross-service dispatch goes over SNS, not Axon's CommandBus)
+- **Axon Framework 4.10** for the saga (lifecycle/correlation/persistence) and, in every service, as the native in-JVM command/query bus (`CommandGateway`/`QueryGateway`) — cross-service dispatch still goes over SNS, not Axon's distributed CommandBus
 - **Spring Cloud AWS** for SNS publish / SQS consume (against LocalStack locally)
-- **MongoDB Java driver** (POJO codec, not Spring Data) for persistence
-- **Jakarta Bean Validation** for request/command validation
+- **PostgreSQL + Spring Data JPA** for persistence
+- **Jakarta Bean Validation** for request/command validation (enforced on commands via Axon's `BeanValidationInterceptor`)
 - **springdoc-openapi** for Swagger UI
 
 ## Workflow Scenarios
 
 ### Happy Path
-1. **Create Order** → Order is created in Order Service (stored in MongoDB)
+1. **Create Order** → Order is created in Order Service (stored in PostgreSQL)
 2. **Place Order** → Saga validates order exists via Order Service
 3. **Process Payment** → Payment is processed (simulated gateway, ~85% approval)
 4. **Fulfill Order** → Items are shipped (simulated warehouse, ~85% in stock)
@@ -135,11 +127,11 @@ mvn install -DskipTests
 ```bash
 docker compose up --build
 ```
-This starts MongoDB, LocalStack (with the SNS/SQS topology auto-provisioned via `docker/localstack-init`), and all five services.
+This starts PostgreSQL (with one database per service auto-provisioned via `docker/postgres-init`), LocalStack (with the SNS/SQS topology auto-provisioned via `docker/localstack-init`), and all five services.
 
 ### Running locally without Docker (for iterating on one service)
 ```bash
-docker compose up -d mongodb localstack
+docker compose up -d postgres localstack
 java -jar microservices/order/order-api/target/order-api.jar --server.port=8091
 java -jar microservices/payment/payment-api/target/payment-api.jar --server.port=8092
 java -jar microservices/fulfillment/fulfillment-api/target/fulfillment-api.jar --server.port=8093
@@ -220,16 +212,17 @@ Run multiple order requests to see different workflow paths execute.
 
 ## Configuration
 
-### MongoDB Connection
-Each service has its own database, configured via `mongodb.connection-string` / `mongodb.database-name`
-(or the `MONGODB_CONNECTIONSTRING` / `MONGODB_DATABASENAME` env vars in Docker):
+### PostgreSQL Connection
+Each service has its own database on the shared Postgres instance, configured via `spring.datasource.url`
+(or the `SPRING_DATASOURCE_URL` / `SPRING_DATASOURCE_USERNAME` / `SPRING_DATASOURCE_PASSWORD` env vars in Docker).
+Schema is created/updated automatically at startup (`spring.jpa.hibernate.ddl-auto: update`, no separate migration step):
 
 | Service | Database |
 |---|---|
-| Order | `OrderDb` |
-| Payment | `PaymentDb` |
-| Fulfillment | `FulfillmentDb` |
-| Orchestrator | `OrderPlacementOrchestratorDb` |
+| Order | `order_db` |
+| Payment | `payment_db` |
+| Fulfillment | `fulfillment_db` |
+| Orchestrator | `orchestrator_db` |
 
 ### AWS / LocalStack
 `spring.cloud.aws.sns.endpoint` / `spring.cloud.aws.sqs.endpoint` point at LocalStack (`http://localhost:4566` locally,

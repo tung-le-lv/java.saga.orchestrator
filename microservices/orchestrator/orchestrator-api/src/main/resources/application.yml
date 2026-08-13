@@ -4,6 +4,16 @@ server:
 spring:
   application:
     name: orchestrator-api
+  # This service never event-sources anything - EventGateway.publish(...) is only used to
+  # bridge SNS/SQS-delivered integration events onto Axon's in-memory event bus for the saga's
+  # subscribing @SagaEventHandlers. Axon still auto-configures a persistent event store (JPA,
+  # falling back to raw JDBC) the moment a DataSource is on the classpath (needed only for
+  # JpaSagaStore); exclude both explicitly so publish() stays a plain in-memory dispatch via
+  # Axon's default SimpleEventBus instead of trying to durably persist every bridged event.
+  autoconfigure:
+    exclude:
+      - org.axonframework.springboot.autoconfig.JpaEventStoreAutoConfiguration
+      - org.axonframework.springboot.autoconfig.JdbcAutoConfiguration
   cloud:
     aws:
       region:
@@ -16,13 +26,28 @@ spring:
       sqs:
         endpoint: http://localhost:4566
 
-mongodb:
-  connection-string: mongodb://localhost:27017
-  database-name: OrderPlacementOrchestratorDb
+  datasource:
+    url: jdbc:postgresql://localhost:5432/orchestrator_db
+    username: postgres
+    password: postgres
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
 
 axon:
   axonserver:
     enabled: false
+  serializer:
+    general: jackson
+  eventhandling:
+    processors:
+      # The saga reacts to events bridged in-process from SNS/SQS (see AxonBridgeDispatcher) as
+      # they arrive - there's no durable event log to track a position against, so this must be
+      # "subscribing" (synchronous, in-memory) rather than Axon's default "tracking" mode, which
+      # would otherwise require a JPA-backed event store/token store this service doesn't use.
+      OrderPlacementSagaProcessor:
+        mode: subscribing
 
 springdoc:
   swagger-ui:

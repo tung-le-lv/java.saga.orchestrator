@@ -25,7 +25,7 @@ public class OrderMustBeInOneOfStatusesRule implements BusinessRule {
 
     @Override
     public String getMessage() {
-        String allowed = allowedStatuses.stream().map(OrderStatus::getName).collect(Collectors.joining(", "));
-        return "Cannot " + action + ": order must be in one of [" + allowed + "] but is in '" + currentStatus.getName() + "'";
+        String allowed = allowedStatuses.stream().map(OrderStatus::getDisplayName).collect(Collectors.joining(", "));
+        return "Cannot " + action + ": order must be in one of [" + allowed + "] but is in '" + currentStatus.getDisplayName() + "'";
     }
 }

@@ -8,27 +8,48 @@ import com.openmind.payment.domain.rules.PaymentMustBeInOneOfStatusesRule;
 import com.openmind.payment.domain.rules.PaymentMustBeInStatusRule;
 import com.openmind.payment.domain.valueobjects.Money;
 import com.openmind.shared.domain.AggregateRoot;
+import jakarta.persistence.AttributeOverride;
+import jakarta.persistence.Column;
+import jakarta.persistence.Embedded;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.Table;
 
+import java.math.BigDecimal;
+import java.util.List;
 import java.util.UUID;
 
 /**
  * Payment aggregate root following DDD tactical patterns.
  */
+@jakarta.persistence.Entity
+@Table(name = "payments")
 public class Payment extends AggregateRoot {
 
+    @Column(nullable = false)
     private UUID orderId;
+
+    @Column(nullable = false)
     private UUID customerId;
+
+    @Embedded
+    @AttributeOverride(name = "amount", column = @Column(name = "amount"))
     private Money amount;
+
     private String paymentMethod;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private PaymentStatus status;
+
     private String transactionId;
     private String failureReason;
     private String failureCode;
 
-    // Required for MongoDB deserialization
+    // Required by JPA
     protected Payment() {
         super();
-        this.amount = Money.create(java.math.BigDecimal.ZERO);
+        this.amount = Money.create(BigDecimal.ZERO);
         this.status = PaymentStatus.PENDING;
     }
 
@@ -49,7 +70,7 @@ public class Payment extends AggregateRoot {
         // Completing is valid both for a fresh payment (Pending) and for one being retried
         // after a prior decline (Failed) - see RetryPaymentCommandHandler.
         checkRule(new PaymentMustBeInOneOfStatusesRule(
-                status, java.util.List.of(PaymentStatus.PENDING, PaymentStatus.FAILED), "complete"));
+                status, List.of(PaymentStatus.PENDING, PaymentStatus.FAILED), "complete"));
 
         status = PaymentStatus.COMPLETED;
         this.transactionId = transactionId;
@@ -82,63 +103,31 @@ public class Payment extends AggregateRoot {
         return orderId;
     }
 
-    public void setOrderId(UUID orderId) {
-        this.orderId = orderId;
-    }
-
     public UUID getCustomerId() {
         return customerId;
-    }
-
-    public void setCustomerId(UUID customerId) {
-        this.customerId = customerId;
     }
 
     public Money getAmount() {
         return amount;
     }
 
-    public void setAmount(Money amount) {
-        this.amount = amount;
-    }
-
     public String getPaymentMethod() {
         return paymentMethod;
-    }
-
-    public void setPaymentMethod(String paymentMethod) {
-        this.paymentMethod = paymentMethod;
     }
 
     public PaymentStatus getStatus() {
         return status;
     }
 
-    public void setStatus(PaymentStatus status) {
-        this.status = status;
-    }
-
     public String getTransactionId() {
         return transactionId;
-    }
-
-    public void setTransactionId(String transactionId) {
-        this.transactionId = transactionId;
     }
 
     public String getFailureReason() {
         return failureReason;
     }
 
-    public void setFailureReason(String failureReason) {
-        this.failureReason = failureReason;
-    }
-
     public String getFailureCode() {
         return failureCode;
-    }
-
-    public void setFailureCode(String failureCode) {
-        this.failureCode = failureCode;
     }
 }

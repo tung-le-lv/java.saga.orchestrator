@@ -15,10 +15,18 @@ spring:
         endpoint: http://localhost:4566
       sqs:
         endpoint: http://localhost:4566
+  datasource:
+    url: jdbc:postgresql://localhost:5432/order_db
+    username: postgres
+    password: postgres
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
 
-mongodb:
-  connection-string: mongodb://localhost:27017
-  database-name: OrderDb
+axon:
+  axonserver:
+    enabled: false
 
 springdoc:
   swagger-ui:

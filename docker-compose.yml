@@ -1,16 +1,20 @@
 services:
-  # MongoDB Database
-  mongodb:
-    image: mongo:7.0
-    container_name: openmind-mongodb
+  # PostgreSQL Database (one database per service, see docker/postgres-init)
+  postgres:
+    image: postgres:16-alpine
+    container_name: openmind-postgres
     ports:
-      - "27017:27017"
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
     volumes:
-      - mongodb_data:/data/db
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres-init:/docker-entrypoint-initdb.d
     networks:
       - openmind-network
     healthcheck:
-      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -46,12 +50,13 @@ services:
     ports:
       - "5001:8080"
     environment:
-      - MONGODB_CONNECTIONSTRING=mongodb://mongodb:27017
-      - MONGODB_DATABASENAME=OrderDb
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/order_db
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=postgres
       - SPRING_CLOUD_AWS_SNS_ENDPOINT=http://localstack:4566
       - SPRING_CLOUD_AWS_SQS_ENDPOINT=http://localstack:4566
     depends_on:
-      mongodb:
+      postgres:
         condition: service_healthy
       localstack:
         condition: service_healthy
@@ -67,12 +72,13 @@ services:
     ports:
       - "5002:8080"
     environment:
-      - MONGODB_CONNECTIONSTRING=mongodb://mongodb:27017
-      - MONGODB_DATABASENAME=PaymentDb
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/payment_db
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=postgres
       - SPRING_CLOUD_AWS_SNS_ENDPOINT=http://localstack:4566
       - SPRING_CLOUD_AWS_SQS_ENDPOINT=http://localstack:4566
     depends_on:
-      mongodb:
+      postgres:
         condition: service_healthy
       localstack:
         condition: service_healthy
@@ -88,12 +94,13 @@ services:
     ports:
       - "5003:8080"
     environment:
-      - MONGODB_CONNECTIONSTRING=mongodb://mongodb:27017
-      - MONGODB_DATABASENAME=FulfillmentDb
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/fulfillment_db
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=postgres
       - SPRING_CLOUD_AWS_SNS_ENDPOINT=http://localstack:4566
       - SPRING_CLOUD_AWS_SQS_ENDPOINT=http://localstack:4566
     depends_on:
-      mongodb:
+      postgres:
         condition: service_healthy
       localstack:
         condition: service_healthy
@@ -126,12 +133,13 @@ services:
     ports:
       - "5000:8080"
     environment:
-      - MONGODB_CONNECTIONSTRING=mongodb://mongodb:27017
-      - MONGODB_DATABASENAME=OrderPlacementOrchestratorDb
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/orchestrator_db
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=postgres
       - SPRING_CLOUD_AWS_SNS_ENDPOINT=http://localstack:4566
       - SPRING_CLOUD_AWS_SQS_ENDPOINT=http://localstack:4566
     depends_on:
-      mongodb:
+      postgres:
         condition: service_healthy
       localstack:
         condition: service_healthy
@@ -139,7 +147,7 @@ services:
       - openmind-network
 
 volumes:
-  mongodb_data:
+  postgres_data:
   localstack_data:
 
 networks:

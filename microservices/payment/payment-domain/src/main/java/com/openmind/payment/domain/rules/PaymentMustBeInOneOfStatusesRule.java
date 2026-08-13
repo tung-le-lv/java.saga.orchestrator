@@ -25,7 +25,7 @@ public class PaymentMustBeInOneOfStatusesRule implements BusinessRule {
 
     @Override
     public String getMessage() {
-        String allowed = allowedStatuses.stream().map(PaymentStatus::getName).collect(Collectors.joining(", "));
-        return "Cannot " + action + ": payment must be in one of [" + allowed + "] but is in '" + currentStatus.getName() + "'";
+        String allowed = allowedStatuses.stream().map(PaymentStatus::getDisplayName).collect(Collectors.joining(", "));
+        return "Cannot " + action + ": payment must be in one of [" + allowed + "] but is in '" + currentStatus.getDisplayName() + "'";
     }
 }

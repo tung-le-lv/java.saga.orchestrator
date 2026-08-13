@@ -21,5 +21,9 @@
             <groupId>com.openmind</groupId>
             <artifactId>shared-domain</artifactId>
         </dependency>
+        <dependency>
+            <groupId>jakarta.persistence</groupId>
+            <artifactId>jakarta.persistence-api</artifactId>
+        </dependency>
     </dependencies>
 </project>

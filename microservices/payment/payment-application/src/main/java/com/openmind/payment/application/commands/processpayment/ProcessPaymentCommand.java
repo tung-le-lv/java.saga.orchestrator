@@ -1,6 +1,5 @@
 package com.openmind.payment.application.commands.processpayment;
 
-import com.openmind.shared.application.commands.Command;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 
@@ -14,5 +13,5 @@ public record ProcessPaymentCommand(
         String paymentMethod,
         String cardNumber,
         String cardExpiry,
-        UUID correlationId) implements Command<UUID> {
+        UUID correlationId) {
 }

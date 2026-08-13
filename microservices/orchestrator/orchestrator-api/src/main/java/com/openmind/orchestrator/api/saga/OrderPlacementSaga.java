@@ -24,6 +24,7 @@ import com.openmind.payment.contract.commands.RefundPaymentCommand;
 import com.openmind.payment.contract.events.PaymentCompletedEvent;
 import com.openmind.payment.contract.events.PaymentFailedEvent;
 import com.openmind.payment.contract.events.PaymentRefundedEvent;
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.openmind.shared.messaging.MessagePublisher;
 import com.openmind.shared.messaging.Topics;
 import org.axonframework.modelling.saga.SagaEventHandler;
@@ -43,11 +44,10 @@ import java.util.UUID;
 
 /**
  * Order Placement Saga: coordinates the order placement workflow across the Order, Payment,
- * Fulfillment and Email services, replicating the original MassTransit/Automatonymous state
- * machine's behavior using Axon's saga model.
+ * Fulfillment and Email services using Axon's saga model.
  * <p>
  * Axon only manages saga lifecycle, correlation (association by {@code orderId}) and
- * persistence here (see {@link MongoSagaStore}). Cross-service dispatch does not go through
+ * persistence here (Axon's own {@code JpaSagaStore}, autoconfigured). Cross-service dispatch does not go through
  * Axon's CommandBus: each handler below publishes the next integration command directly to
  * SNS via {@link MessagePublisher}, since the target is another microservice reached over
  * SQS, not an in-JVM handler. Inbound integration messages are bridged onto Axon's local
@@ -58,7 +58,17 @@ import java.util.UUID;
  * Payment failure: PaymentProcessing -&gt; PaymentNotPaid (retryable via the Payment API), then continues to Fulfilling.
  * Out of stock: Fulfilling -&gt; RefundingPayment -&gt; SendingBackorderEmail -&gt; SendingRefundEmail -&gt; Cancelled.
  */
-@Saga(sagaStore = "mongoSagaStore")
+// This saga's state lives entirely in private fields with no getters. Axon's default Jackson
+// serializer (see application.yml's axon.serializer.general) uses a plain, unconfigured
+// ObjectMapper, which only sees public getters/fields by default - so without this, every
+// field here would round-trip as null on the next event once the saga is reloaded from the
+// JpaSagaStore.
+@JsonAutoDetect(
+        fieldVisibility = JsonAutoDetect.Visibility.ANY,
+        getterVisibility = JsonAutoDetect.Visibility.NONE,
+        isGetterVisibility = JsonAutoDetect.Visibility.NONE,
+        setterVisibility = JsonAutoDetect.Visibility.NONE)
+@Saga
 public class OrderPlacementSaga {
 
     private static final Logger log = LoggerFactory.getLogger(OrderPlacementSaga.class);

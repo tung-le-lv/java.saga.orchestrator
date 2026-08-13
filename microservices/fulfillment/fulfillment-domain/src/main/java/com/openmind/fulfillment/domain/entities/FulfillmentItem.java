@@ -1,16 +1,25 @@
 package com.openmind.fulfillment.domain.entities;
 
 import com.openmind.shared.domain.Entity;
+import jakarta.persistence.Column;
+import jakarta.persistence.Table;
 
 import java.util.UUID;
 
+@jakarta.persistence.Entity
+@Table(name = "fulfillment_items")
 public class FulfillmentItem extends Entity {
 
+    @Column(nullable = false)
     private UUID productId;
+
+    @Column(nullable = false)
     private String productName;
+
+    @Column(nullable = false)
     private int quantity;
 
-    // Required for MongoDB deserialization
+    // Required by JPA
     protected FulfillmentItem() {
         super();
     }
@@ -30,23 +39,11 @@ public class FulfillmentItem extends Entity {
         return productId;
     }
 
-    public void setProductId(UUID productId) {
-        this.productId = productId;
-    }
-
     public String getProductName() {
         return productName;
     }
 
-    public void setProductName(String productName) {
-        this.productName = productName;
-    }
-
     public int getQuantity() {
         return quantity;
-    }
-
-    public void setQuantity(int quantity) {
-        this.quantity = quantity;
     }
 }

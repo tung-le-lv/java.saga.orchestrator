@@ -3,7 +3,7 @@ WORKDIR /workspace
 
 COPY pom.xml .
 COPY shared-kernel shared-kernel
-COPY microservices/email microservices/email
+COPY microservices microservices
 
 RUN mvn -q -pl microservices/email/email-api -am package -DskipTests
 
