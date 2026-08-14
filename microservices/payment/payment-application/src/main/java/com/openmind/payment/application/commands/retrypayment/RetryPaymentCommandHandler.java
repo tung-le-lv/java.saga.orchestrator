@@ -25,11 +25,14 @@ public class RetryPaymentCommandHandler {
         var payment = paymentRepository.findByOrderId(command.orderId())
                 .orElseThrow(() -> new EntityNotFoundException("No payment found for order"));
 
-        // The saga's correlation id is the order id for the lifetime of the saga instance.
         UUID correlationId = command.orderId();
+
+        // Simulate a successful payment completion
         String transactionId = "TXN-RETRY-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+        
         payment.complete(transactionId, correlationId);
         paymentRepository.update(payment);
+        
         log.info("[RetryPayment] Forced completion - OrderId: {}, PaymentId: {}", command.orderId(), payment.getId());
     }
 }
